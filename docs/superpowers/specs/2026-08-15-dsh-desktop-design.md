@@ -36,13 +36,19 @@ DSH Desktop 不实现 Agent、不修改 DSH、不接管 DSH 用户数据，也�
 
 ## 3. 首版范围
 
-### 3.1 支持平台
+### 3.1 支持系统与构建目标
+
+DSH Desktop 从首版开始同时支持 macOS 和 Windows。两套系统共用同一套 Electron、TypeScript 和 React 源码，不把操作系统支持拆成不同产品阶段。
+
+首版分别生成和验证以下安装包构建目标：
 
 - macOS arm64
 - macOS x64
 - Windows 10/11 x64
 
-首版不支持 Linux、Windows arm64 和 Mac App Store。
+这里的 arm64 和 x64 是安装包的 CPU 架构目标，不是产品平台选择。不同目标需要分别携带对应的 Electron、Node.js 和 DSH 平台依赖，并分别完成安装、进程管理、签名与系统兼容性验证。
+
+首版暂不生成 Linux、Windows arm64 和 Mac App Store 安装包。
 
 ### 3.2 用户能力
 
@@ -470,7 +476,7 @@ DSH Desktop 默认不记录：
 - DSH 崩溃后 Manager Window 展示错误并可重试。
 - App 重启后保留已安装版本列表和用户选择。
 
-### 16.5 平台安装包验收
+### 16.5 各构建目标安装包验收
 
 | 平台 | 环境 | 验收内容 |
 |---|---|---|
@@ -486,7 +492,7 @@ DSH Desktop 默认不记录：
 - 集成测试通过
 - 官方 DSH 契约测试通过
 - Electron E2E 通过
-- 三个平台构建矩阵通过
+- macOS 与 Windows 的三个构建目标全部通过
 - 安装包 smoke test 通过
 - 第三方许可证清单生成
 - 安装包 SHA-256 生成
@@ -497,7 +503,7 @@ DSH Desktop 默认不记录：
 
 ## 17. 构建与发布
 
-GitHub Actions 构建矩阵：
+GitHub Actions 使用同一份源代码分别生成三个构建目标：
 
 - macOS arm64
 - macOS x64
