@@ -14,6 +14,11 @@ export interface InstalledVersion {
   source: 'bundled' | 'installed'
 }
 
+export interface OfficialVersion {
+  version: string
+  publishedAt: string | null
+}
+
 export interface AppSnapshot {
   appVersion: string
   nodeVersion: string | null
@@ -21,6 +26,7 @@ export interface AppSnapshot {
   selectedVersion: string | null
   dismissedLatest: string | null
   installedVersions: InstalledVersion[]
+  availableVersions: OfficialVersion[]
   runtimeStatus: RuntimeStatus
   runtimeUrl: string | null
   error: string | null

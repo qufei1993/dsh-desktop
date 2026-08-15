@@ -13,7 +13,7 @@ DSH Desktop 解决的是安装和启动门槛：应用自带 Node.js 24 LTS，�
 - macOS Apple Silicon、macOS Intel、Windows x64
 - 随安装包提供 Node.js 24 LTS，用户无需安装 Node.js
 - 随应用提供一个经过校验的官方 DSH 版本
-- 从 npm 官方版本目录检查更新，由用户决定是否安装
+- 从 npm 官方版本目录读取全部历史版本和发布日期，可搜索、筛选并由用户决定是否安装
 - 多个官方版本并存，可随时切回旧版本
 - 同一时间只运行一个官方 `dsh web --port 0` 进程
 - DSH 页面使用独立沙箱窗口，管理窗口无法访问页面内容

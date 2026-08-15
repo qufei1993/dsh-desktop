@@ -1,6 +1,6 @@
 import { EventEmitter } from 'node:events'
 import semver from 'semver'
-import type { AppSnapshot, InstallProgress } from '../shared/contracts'
+import type { AppSnapshot, InstallProgress, OfficialVersion } from '../shared/contracts'
 import { exactVersionSchema } from '../shared/contracts'
 import { runProcess } from './process-utils'
 import { DshRegistry } from './registry'
@@ -12,7 +12,7 @@ import { VersionManager } from './version-manager'
 export class AppController extends EventEmitter {
   private state: PersistedState = { schemaVersion: 1, selectedVersion: null, dismissedLatest: null }
   private latestVersion: string | null = null
-  private availableVersions: string[] = []
+  private availableVersions: OfficialVersion[] = []
   private nodeVersion: string | null = null
   private error: string | null = null
   private installing = false
@@ -64,9 +64,11 @@ export class AppController extends EventEmitter {
         this.latestVersion = catalog.latest
         this.availableVersions = catalog.versions
       }
-      await this.versions.install(version, this.availableVersions, (progress) => this.emit('progress', progress))
-      this.state.selectedVersion = version
-      await this.store.write(this.state)
+      await this.versions.install(version, this.availableVersions.map((item) => item.version), (progress) => this.emit('progress', progress))
+      if (!this.state.selectedVersion) {
+        this.state.selectedVersion = version
+        await this.store.write(this.state)
+      }
       this.error = null
     } catch (error) {
       this.error = error instanceof Error ? error.message : '安装失败'
@@ -121,6 +123,7 @@ export class AppController extends EventEmitter {
 
   async snapshot(): Promise<AppSnapshot> {
     const installedVersions = (await this.versions.list()).sort((a, b) => semver.rcompare(a.version, b.version))
+    const availableVersions = [...this.availableVersions].sort((a, b) => semver.rcompare(a.version, b.version))
     return {
       appVersion: this.appVersion,
       nodeVersion: this.nodeVersion,
@@ -128,6 +131,7 @@ export class AppController extends EventEmitter {
       selectedVersion: this.state.selectedVersion,
       dismissedLatest: this.state.dismissedLatest,
       installedVersions,
+      availableVersions,
       runtimeStatus: this.supervisor.status,
       runtimeUrl: this.supervisor.url,
       error: this.error

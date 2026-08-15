@@ -42,8 +42,14 @@ try {
     item.click(item, undefined, undefined)
   })
   const manager = await managerPromise
-  await manager.getByRole('heading', { name: 'DSH Desktop' }).waitFor()
+  await manager.getByRole('heading', { name: '版本管理' }).waitFor()
   await manager.getByText('DSH 0.1.0-rc.6').waitFor()
+  await manager.getByRole('button', { name: /全部版本/ }).waitFor()
+  await manager.getByText('npm 官方源').waitFor()
+  if (process.env.DSH_DESKTOP_E2E_SCREENSHOT) {
+    await manager.getByText('0.0.1-rc.1', { exact: true }).waitFor({ timeout: 20_000 })
+    await manager.screenshot({ path: process.env.DSH_DESKTOP_E2E_SCREENSHOT, fullPage: true })
+  }
   await dshWindow.close()
   await manager.getByText('未运行', { exact: true }).waitFor({ timeout: 10_000 })
   console.log('Packaged E2E passed: direct official DSH launch, version menu, manager UI, and stop-on-close')

@@ -26,8 +26,8 @@ function sendToManager(channel: string, payload: AppSnapshot | InstallProgress):
 
 function createManagerWindow(): BrowserWindow {
   const window = new BrowserWindow({
-    width: 980,
-    height: 700,
+    width: 1040,
+    height: 760,
     minWidth: 760,
     minHeight: 560,
     show: false,
@@ -172,11 +172,18 @@ function registerIpc(instance: AppController): void {
   })
   ipcMain.handle(channels.select, async (event, version: unknown) => {
     assertManager(event)
-    return await instance.select(exactVersionSchema.parse(version))
+    const target = exactVersionSchema.parse(version)
+    if (instance.isRuntimeActive()) await instance.stop()
+    await instance.select(target)
+    const snapshot = await instance.launch()
+    if (!snapshot.runtimeUrl) throw new Error('官方 DSH 未返回本地地址')
+    await openDshWindow(snapshot.runtimeUrl)
+    return snapshot
   })
   ipcMain.handle(channels.launch, async (event) => {
     assertManager(event)
-    const snapshot = await instance.launch()
+    const current = await instance.snapshot()
+    const snapshot = current.runtimeStatus === 'running' && current.runtimeUrl ? current : await instance.launch()
     if (!snapshot.runtimeUrl) throw new Error('官方 DSH 未返回本地地址')
     await openDshWindow(snapshot.runtimeUrl)
     return snapshot

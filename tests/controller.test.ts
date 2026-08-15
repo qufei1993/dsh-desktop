@@ -14,7 +14,7 @@ let directory = ''
 afterEach(async () => { if (directory) await rm(directory, { recursive: true, force: true }) })
 
 describe('AppController', () => {
-  it('提示新版本但不自动切换，用户安装后才选择新版本', async () => {
+  it('提示并安装新版本但保持当前选择，用户确认后才切换', async () => {
     directory = await mkdtemp(path.join(os.tmpdir(), 'dsh-controller-'))
     const runtime = { node: process.execPath, npmCli: path.join(root, 'tests/fixtures/fake-npm.mjs') }
     const versions = new VersionManager(directory, path.join(directory, 'bundled'), runtime)
@@ -27,7 +27,9 @@ describe('AppController', () => {
     const refreshed = await controller.refresh()
     expect(refreshed.latestVersion).toBe('1.1.0')
     expect(refreshed.selectedVersion).toBe('1.0.0')
+    expect(refreshed.availableVersions.map((item) => item.version)).toEqual(['1.1.0', '1.0.0'])
     expect((await controller.dismissUpdate('1.1.0')).dismissedLatest).toBe('1.1.0')
-    expect((await controller.install('1.1.0')).selectedVersion).toBe('1.1.0')
+    expect((await controller.install('1.1.0')).selectedVersion).toBe('1.0.0')
+    expect((await controller.select('1.1.0')).selectedVersion).toBe('1.1.0')
   })
 })
