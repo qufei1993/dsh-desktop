@@ -7,6 +7,12 @@ export const channels = {
   stop: 'dsh:stop',
   dismissUpdate: 'dsh:dismiss-update',
   openExternal: 'dsh:open-external',
+  setLocale: 'desktop:set-locale',
   stateChanged: 'dsh:state-changed',
-  installProgress: 'dsh:install-progress'
+  installProgress: 'dsh:install-progress',
+  appUpdateSnapshot: 'desktop-update:snapshot',
+  appUpdateCheck: 'desktop-update:check',
+  appUpdateDownload: 'desktop-update:download',
+  appUpdateInstall: 'desktop-update:install',
+  appUpdateChanged: 'desktop-update:changed'
 } as const

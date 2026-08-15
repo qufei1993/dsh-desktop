@@ -1,7 +1,7 @@
 import { EventEmitter } from 'node:events'
 import semver from 'semver'
-import type { AppSnapshot, InstallProgress, OfficialVersion } from '../shared/contracts'
-import { exactVersionSchema } from '../shared/contracts'
+import type { AppLocale, AppSnapshot, InstallProgress, LocalePreference, OfficialVersion } from '../shared/contracts'
+import { exactVersionSchema, localePreferenceSchema, resolveLocale } from '../shared/contracts'
 import { runProcess } from './process-utils'
 import { DshRegistry } from './registry'
 import type { RuntimePaths } from './runtime-paths'
@@ -10,7 +10,7 @@ import { DshSupervisor } from './dsh-supervisor'
 import { VersionManager } from './version-manager'
 
 export class AppController extends EventEmitter {
-  private state: PersistedState = { schemaVersion: 1, selectedVersion: null, dismissedLatest: null }
+  private state: PersistedState = { schemaVersion: 1, selectedVersion: null, dismissedLatest: null, localePreference: 'system' }
   private latestVersion: string | null = null
   private availableVersions: OfficialVersion[] = []
   private nodeVersion: string | null = null
@@ -23,7 +23,8 @@ export class AppController extends EventEmitter {
     private readonly registry: DshRegistry,
     private readonly versions: VersionManager,
     private readonly supervisor: DshSupervisor,
-    private readonly runtime: RuntimePaths
+    private readonly runtime: RuntimePaths,
+    private readonly systemLocale: AppLocale = 'zh-CN'
   ) {
     super()
     supervisor.on('status', () => { void this.emitSnapshot() })
@@ -117,8 +118,18 @@ export class AppController extends EventEmitter {
     return await this.emitSnapshot()
   }
 
+  async setLocale(preference: LocalePreference): Promise<AppSnapshot> {
+    this.state.localePreference = localePreferenceSchema.parse(preference)
+    await this.store.write(this.state)
+    return await this.emitSnapshot()
+  }
+
   isRuntimeActive(): boolean {
     return !['idle', 'failed'].includes(this.supervisor.status)
+  }
+
+  getLocalePreference(): LocalePreference {
+    return this.state.localePreference
   }
 
   async snapshot(): Promise<AppSnapshot> {
@@ -126,6 +137,8 @@ export class AppController extends EventEmitter {
     const availableVersions = [...this.availableVersions].sort((a, b) => semver.rcompare(a.version, b.version))
     return {
       appVersion: this.appVersion,
+      locale: resolveLocale(this.state.localePreference, this.systemLocale),
+      localePreference: this.state.localePreference,
       nodeVersion: this.nodeVersion,
       latestVersion: this.latestVersion,
       selectedVersion: this.state.selectedVersion,

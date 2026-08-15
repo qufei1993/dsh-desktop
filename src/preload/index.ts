@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { channels } from '../shared/ipc-channels'
-import type { AppSnapshot, DesktopApi, InstallProgress } from '../shared/contracts'
+import type { AppSnapshot, AppUpdateSnapshot, DesktopApi, InstallProgress, LocalePreference } from '../shared/contracts'
 
 const api: DesktopApi = {
   getSnapshot: () => ipcRenderer.invoke(channels.snapshot),
@@ -11,6 +11,11 @@ const api: DesktopApi = {
   stop: () => ipcRenderer.invoke(channels.stop),
   dismissUpdate: (version) => ipcRenderer.invoke(channels.dismissUpdate, version),
   openExternal: (url) => ipcRenderer.invoke(channels.openExternal, url),
+  setLocale: (preference: LocalePreference) => ipcRenderer.invoke(channels.setLocale, preference),
+  getAppUpdate: () => ipcRenderer.invoke(channels.appUpdateSnapshot),
+  checkAppUpdate: () => ipcRenderer.invoke(channels.appUpdateCheck),
+  downloadAppUpdate: () => ipcRenderer.invoke(channels.appUpdateDownload),
+  installAppUpdate: () => ipcRenderer.invoke(channels.appUpdateInstall),
   onStateChanged: (listener) => {
     const handler = (_event: Electron.IpcRendererEvent, snapshot: AppSnapshot): void => listener(snapshot)
     ipcRenderer.on(channels.stateChanged, handler)
@@ -20,6 +25,11 @@ const api: DesktopApi = {
     const handler = (_event: Electron.IpcRendererEvent, progress: InstallProgress): void => listener(progress)
     ipcRenderer.on(channels.installProgress, handler)
     return () => ipcRenderer.removeListener(channels.installProgress, handler)
+  },
+  onAppUpdateChanged: (listener) => {
+    const handler = (_event: Electron.IpcRendererEvent, snapshot: AppUpdateSnapshot): void => listener(snapshot)
+    ipcRenderer.on(channels.appUpdateChanged, handler)
+    return () => ipcRenderer.removeListener(channels.appUpdateChanged, handler)
   }
 }
 

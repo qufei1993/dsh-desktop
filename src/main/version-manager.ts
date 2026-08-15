@@ -4,6 +4,7 @@ import { existsSync } from 'node:fs'
 import path from 'node:path'
 import { exactVersionSchema, officialPackageName, type InstallProgress, type InstalledVersion } from '../shared/contracts'
 import type { RuntimePaths } from './runtime-paths'
+import { npmProxyEnvironment } from './network-proxy'
 
 interface PackageManifest {
   name?: string
@@ -24,7 +25,8 @@ export class VersionManager {
   constructor(
     userData: string,
     private readonly bundledDir: string,
-    private readonly runtime: RuntimePaths
+    private readonly runtime: RuntimePaths,
+    private readonly proxyUrl: string | null = null
   ) {
     this.versionsDir = path.join(userData, 'dsh-versions')
   }
@@ -94,7 +96,7 @@ export class VersionManager {
         '--prefer-offline',
         '--registry=https://registry.npmjs.org/',
         '--ignore-scripts=false'
-      ], { shell: false, windowsHide: true, stdio: ['ignore', 'ignore', 'pipe'] })
+      ], { env: npmProxyEnvironment(this.proxyUrl), shell: false, windowsHide: true, stdio: ['ignore', 'ignore', 'pipe'] })
       let stderr = ''
       child.stderr.setEncoding('utf8').on('data', (chunk: string) => { stderr += chunk })
       child.once('error', reject)

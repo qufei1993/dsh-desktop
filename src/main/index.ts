@@ -1,7 +1,10 @@
-import { app, BrowserWindow, ipcMain, Menu, Notification, shell } from 'electron'
+import { app, BrowserWindow, ipcMain, Menu, nativeImage, net, Notification, session, shell } from 'electron'
+import electronUpdater from 'electron-updater'
 import path from 'node:path'
 import semver from 'semver'
-import { channels, exactVersionSchema, type AppSnapshot, type InstallProgress } from '../shared/contracts'
+import { channels, exactVersionSchema, localePreferenceSchema, type AppLocale, type AppSnapshot, type AppUpdateSnapshot, type InstallProgress, type LocalePreference } from '../shared/contracts'
+import { DesktopUpdater } from './app-updater'
+import { applyNetworkProxy, configureNetworkProxy } from './network-proxy'
 import { AppController } from './controller'
 import { DshSupervisor } from './dsh-supervisor'
 import { DshRegistry } from './registry'
@@ -12,15 +15,21 @@ import { VersionManager } from './version-manager'
 let managerWindow: BrowserWindow | null = null
 let dshWindow: BrowserWindow | null = null
 let controller: AppController | null = null
+let desktopUpdater: DesktopUpdater | null = null
 let isQuitting = false
 let isOpeningPrimary = false
 let notifiedVersion: string | null = null
+let notifiedDesktopVersion: string | null = null
+let activeLocale: AppLocale = 'zh-CN'
+let activeLocalePreference: LocalePreference = 'system'
+
+app.setName('DSH Desktop')
 
 function isSafeExternalUrl(raw: string): boolean {
   try { return new URL(raw).protocol === 'https:' } catch { return false }
 }
 
-function sendToManager(channel: string, payload: AppSnapshot | InstallProgress): void {
+function sendToManager(channel: string, payload: AppSnapshot | AppUpdateSnapshot | InstallProgress): void {
   if (managerWindow && !managerWindow.isDestroyed()) managerWindow.webContents.send(channel, payload)
 }
 
@@ -66,21 +75,73 @@ function showManagerWindow(): void {
 }
 
 function installApplicationMenu(): void {
+  const copy = mainCopy(activeLocale)
+  const menuIconPath = app.isPackaged
+    ? path.join(process.resourcesPath, 'ui', 'version-manager.png')
+    : path.join(app.getAppPath(), 'build', 'menu-version-manager.png')
+  const menuIcon = nativeImage.createFromPath(menuIconPath).resize({ width: 16, height: 16 })
+  if (process.platform === 'darwin' && !menuIcon.isEmpty()) menuIcon.setTemplateImage(true)
   const openVersions: Electron.MenuItemConstructorOptions = {
     id: 'version-manager',
-    label: '版本管理…',
+    label: copy.versionManager,
+    icon: menuIcon.isEmpty() ? undefined : menuIcon,
     accelerator: 'CmdOrCtrl+,',
     click: showManagerWindow
+  }
+  const about: Electron.MenuItemConstructorOptions = {
+    id: 'about-dsh-desktop',
+    label: copy.about,
+    click: () => app.showAboutPanel()
+  }
+  const checkUpdates: Electron.MenuItemConstructorOptions = {
+    id: 'check-for-updates',
+    label: copy.checkUpdates,
+    click: () => { showManagerWindow(); void desktopUpdater?.check() }
   }
   const template: Electron.MenuItemConstructorOptions[] = [
     ...(process.platform === 'darwin' ? [{
       label: app.name,
-      submenu: [openVersions, { type: 'separator' as const }, { role: 'hide' as const }, { role: 'hideOthers' as const }, { type: 'separator' as const }, { role: 'quit' as const }]
-    }] : [{ label: 'DSH Desktop', submenu: [openVersions, { type: 'separator' as const }, { role: 'quit' as const }] }]),
-    { label: '编辑', submenu: [{ role: 'undo' }, { role: 'redo' }, { type: 'separator' }, { role: 'cut' }, { role: 'copy' }, { role: 'paste' }, { role: 'selectAll' }] },
-    { label: '窗口', submenu: [{ role: 'minimize' }, { role: 'zoom' }] }
+      submenu: [about, { type: 'separator' as const }, openVersions, checkUpdates, languageMenu(copy), { type: 'separator' as const }, { role: 'hide' as const, label: copy.hide }, { role: 'hideOthers' as const, label: copy.hideOthers }, { type: 'separator' as const }, { role: 'quit' as const, label: copy.quit }]
+    }] : [{ label: 'DSH Desktop', submenu: [about, { type: 'separator' as const }, openVersions, checkUpdates, languageMenu(copy), { type: 'separator' as const }, { role: 'quit' as const, label: copy.quit }] }]),
+    { label: copy.edit, submenu: [{ role: 'undo', label: copy.undo }, { role: 'redo', label: copy.redo }, { type: 'separator' }, { role: 'cut', label: copy.cut }, { role: 'copy', label: copy.copy }, { role: 'paste', label: copy.paste }, { role: 'selectAll', label: copy.selectAll }] },
+    { label: copy.window, submenu: [{ role: 'minimize', label: copy.minimize }, { role: 'zoom', label: copy.zoom }] }
   ]
   Menu.setApplicationMenu(Menu.buildFromTemplate(template))
+}
+
+function languageMenu(copy: ReturnType<typeof mainCopy>): Electron.MenuItemConstructorOptions {
+  return {
+    label: copy.language,
+    submenu: [
+      { label: '简体中文', type: 'radio', checked: activeLocale === 'zh-CN', click: () => { void controller?.setLocale('zh-CN') } },
+      { label: 'English', type: 'radio', checked: activeLocale === 'en-US', click: () => { void controller?.setLocale('en-US') } }
+    ]
+  }
+}
+
+function updateAboutPanel(): void {
+  const copy = mainCopy(activeLocale)
+  app.setAboutPanelOptions({
+    applicationName: 'DSH Desktop',
+    applicationVersion: app.getVersion(),
+    version: copy.version(app.getVersion()),
+    copyright: 'Copyright © 2026 DSH Desktop contributors',
+    credits: copy.credits,
+    website: 'https://github.com/qufei1993/dsh-desktop'
+  })
+}
+
+function notifyDesktopUpdate(snapshot: AppUpdateSnapshot): void {
+  if (snapshot.status !== 'available' || !snapshot.availableVersion || notifiedDesktopVersion === snapshot.availableVersion) return
+  notifiedDesktopVersion = snapshot.availableVersion
+  if (!Notification.isSupported()) return
+  const copy = mainCopy(activeLocale)
+  const notification = new Notification({
+    title: copy.desktopUpdateTitle(snapshot.availableVersion),
+    body: copy.desktopUpdateBody
+  })
+  notification.on('click', showManagerWindow)
+  notification.show()
 }
 
 function notifyDshUpdate(snapshot: AppSnapshot): void {
@@ -88,9 +149,10 @@ function notifyDshUpdate(snapshot: AppSnapshot): void {
   if (!semver.gt(snapshot.latestVersion, snapshot.selectedVersion) || notifiedVersion === snapshot.latestVersion) return
   notifiedVersion = snapshot.latestVersion
   if (!Notification.isSupported()) return
+  const copy = mainCopy(activeLocale)
   const notification = new Notification({
-    title: `DSH ${snapshot.latestVersion} 可以安装`,
-    body: `当前继续使用 ${snapshot.selectedVersion}。点击打开版本管理。`
+    title: copy.dshUpdateTitle(snapshot.latestVersion),
+    body: copy.dshUpdateBody(snapshot.selectedVersion)
   })
   notification.on('click', showManagerWindow)
   notification.show()
@@ -201,26 +263,66 @@ function registerIpc(instance: AppController): void {
     if (typeof raw !== 'string' || !isSafeExternalUrl(raw)) throw new Error('只允许打开 HTTPS 链接')
     await shell.openExternal(raw)
   })
+  ipcMain.handle(channels.setLocale, async (event, raw: unknown) => {
+    assertManager(event)
+    return await instance.setLocale(localePreferenceSchema.parse(raw))
+  })
+  ipcMain.handle(channels.appUpdateSnapshot, (event) => {
+    assertManager(event)
+    return desktopUpdater?.snapshot()
+  })
+  ipcMain.handle(channels.appUpdateCheck, async (event) => {
+    assertManager(event)
+    return await desktopUpdater?.check()
+  })
+  ipcMain.handle(channels.appUpdateDownload, async (event) => {
+    assertManager(event)
+    return await desktopUpdater?.download()
+  })
+  ipcMain.handle(channels.appUpdateInstall, async (event) => {
+    assertManager(event)
+    if (!desktopUpdater) return
+    if (instance.isRuntimeActive()) await instance.stop()
+    desktopUpdater.install()
+  })
 }
 
 app.whenReady().then(async () => {
   if (process.platform === 'win32') app.setAppUserModelId('dev.dsh.desktop')
+  const proxy = await configureNetworkProxy(session.defaultSession)
+  await applyNetworkProxy(electronUpdater.autoUpdater.netSession, proxy)
+  await session.fromPartition('persist:dsh-web').setProxy({ mode: 'direct' })
   const resourcesRoot = app.isPackaged ? process.resourcesPath : path.join(app.getAppPath(), 'build-resources')
   const runtime = resolveRuntimePaths(resourcesRoot, app.isPackaged)
   const store = new StateStore(app.getPath('userData'))
-  const versions = new VersionManager(app.getPath('userData'), path.join(resourcesRoot, 'dsh'), runtime)
+  const versions = new VersionManager(app.getPath('userData'), path.join(resourcesRoot, 'dsh'), runtime, proxy.url)
   const supervisor = new DshSupervisor(runtime.node)
-  controller = new AppController(app.getVersion(), store, new DshRegistry(), versions, supervisor, runtime)
+  controller = new AppController(app.getVersion(), store, new DshRegistry(net.fetch as typeof fetch), versions, supervisor, runtime, normalizeSystemLocale(app.getLocale()))
+  desktopUpdater = new DesktopUpdater(electronUpdater.autoUpdater, app.getVersion(), app.isPackaged)
+  desktopUpdater.on('changed', (snapshot: AppUpdateSnapshot) => {
+    sendToManager(channels.appUpdateChanged, snapshot)
+    notifyDesktopUpdate(snapshot)
+  })
   controller.on('snapshot', (snapshot: AppSnapshot) => {
+    if (snapshot.locale !== activeLocale || snapshot.localePreference !== activeLocalePreference) {
+      activeLocale = snapshot.locale
+      activeLocalePreference = snapshot.localePreference
+      installApplicationMenu()
+      updateAboutPanel()
+    }
     sendToManager(channels.stateChanged, snapshot)
     if (['idle', 'failed'].includes(snapshot.runtimeStatus) && dshWindow && !dshWindow.isDestroyed()) dshWindow.close()
   })
   controller.on('progress', (progress: InstallProgress) => sendToManager(channels.installProgress, progress))
   registerIpc(controller)
+  const initialSnapshot = await controller.initialize()
+  activeLocale = initialSnapshot.locale
+  activeLocalePreference = initialSnapshot.localePreference
   installApplicationMenu()
-  await controller.initialize()
+  updateAboutPanel()
   await openPrimaryWindow()
   void controller.refresh().then(notifyDshUpdate)
+  setTimeout(() => { void desktopUpdater?.check() }, 4_000)
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) void openPrimaryWindow()
@@ -241,3 +343,32 @@ app.on('before-quit', (event) => {
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit()
 })
+
+function normalizeSystemLocale(locale: string): AppLocale {
+  return locale.toLowerCase().startsWith('zh') ? 'zh-CN' : 'en-US'
+}
+
+function mainCopy(locale: AppLocale) {
+  if (locale === 'en-US') return {
+    versionManager: 'Version Manager…', about: 'About DSH Desktop', checkUpdates: 'Check for DSH Desktop Updates…',
+    language: 'Language', edit: 'Edit', window: 'Window', hide: 'Hide DSH Desktop', hideOthers: 'Hide Others', quit: 'Quit DSH Desktop',
+    undo: 'Undo', redo: 'Redo', cut: 'Cut', copy: 'Copy', paste: 'Paste', selectAll: 'Select All', minimize: 'Minimize', zoom: 'Zoom',
+    version: (version: string) => `Version ${version}`,
+    credits: 'DeepSeek Harness community desktop client',
+    desktopUpdateTitle: (version: string) => `DSH Desktop ${version} is available`,
+    desktopUpdateBody: 'Click to view. You decide whether to download and install it.',
+    dshUpdateTitle: (version: string) => `DSH ${version} is available`,
+    dshUpdateBody: (version: string) => `You are still using ${version}. Click to open Version Manager.`
+  }
+  return {
+    versionManager: '版本管理…', about: '关于 DSH Desktop', checkUpdates: '检查 DSH Desktop 更新…',
+    language: '语言', edit: '编辑', window: '窗口', hide: '隐藏 DSH Desktop', hideOthers: '隐藏其他应用', quit: '退出 DSH Desktop',
+    undo: '撤销', redo: '重做', cut: '剪切', copy: '复制', paste: '粘贴', selectAll: '全选', minimize: '最小化', zoom: '缩放',
+    version: (version: string) => `版本 ${version}`,
+    credits: 'DeepSeek Harness 社区桌面客户端',
+    desktopUpdateTitle: (version: string) => `DSH Desktop ${version} 可以更新`,
+    desktopUpdateBody: '点击查看，是否下载和安装由你决定。',
+    dshUpdateTitle: (version: string) => `DSH ${version} 可以安装`,
+    dshUpdateBody: (version: string) => `当前继续使用 ${version}。点击打开版本管理。`
+  }
+}

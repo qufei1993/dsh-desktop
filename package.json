@@ -1,13 +1,26 @@
 {
   "name": "dsh-desktop",
   "version": "0.1.0",
-  "description": "An unofficial desktop shell for the official DeepSeek Harness",
+  "private": true,
+  "description": "A community-maintained desktop client for DeepSeek Harness",
   "license": "MIT",
   "author": "qufei1993",
   "homepage": "https://github.com/qufei1993/dsh-desktop",
   "repository": {
     "type": "git",
     "url": "https://github.com/qufei1993/dsh-desktop.git"
+  },
+  "bugs": {
+    "url": "https://github.com/qufei1993/dsh-desktop/issues"
+  },
+  "keywords": [
+    "deepseek",
+    "deepseek-harness",
+    "desktop",
+    "electron"
+  ],
+  "engines": {
+    "node": ">=22.19"
   },
   "type": "module",
   "main": "out/main/index.js",
@@ -21,13 +34,17 @@
     "test:packaged": "tsx scripts/e2e-packaged.ts",
     "audit:boundary": "tsx scripts/audit-boundary.ts",
     "release:metadata": "tsx scripts/generate-release-metadata.ts",
-    "verify": "npm run typecheck && npm test && npm run build && npm run audit:boundary",
+    "release:notes": "node scripts/extract-changelog.mjs",
+    "version:check": "node scripts/version.mjs check",
+    "version:set": "node scripts/version.mjs set",
+    "verify": "npm run version:check && npm run typecheck && npm test && npm run build && npm run audit:boundary",
     "prepare:runtime": "tsx scripts/prepare-resources.ts",
-    "package:mac:arm64": "npm run prepare:runtime -- --platform=darwin --arch=arm64 && npm run build && electron-builder --mac --arm64 && npm run release:metadata",
-    "package:mac:x64": "npm run prepare:runtime -- --platform=darwin --arch=x64 && npm run build && electron-builder --mac --x64 && npm run release:metadata",
+    "package:mac:arm64": "npm run prepare:runtime -- --platform=darwin --arch=arm64 && npm run build && electron-builder --mac --arm64 --config.publish.channel=latest-arm64 && npm run release:metadata",
+    "package:mac:x64": "npm run prepare:runtime -- --platform=darwin --arch=x64 && npm run build && electron-builder --mac --x64 --config.publish.channel=latest-x64 && npm run release:metadata",
     "package:win:x64": "npm run prepare:runtime -- --platform=win32 --arch=x64 && npm run build && electron-builder --win --x64 && npm run release:metadata"
   },
   "dependencies": {
+    "electron-updater": "6.8.9",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "semver": "7.8.5",
@@ -41,10 +58,10 @@
     "@types/semver": "^7.7.1",
     "@types/write-file-atomic": "4.0.3",
     "@vitejs/plugin-react": "5.2.0",
-    "playwright-core": "1.62.1",
     "electron": "43.4.0",
     "electron-builder": "26.15.3",
     "electron-vite": "5.0.0",
+    "playwright-core": "1.62.1",
     "tsx": "4.23.12",
     "typescript": "7.0.2",
     "vite": "7.3.6",
@@ -70,12 +87,26 @@
       {
         "from": "build-resources/dsh",
         "to": "dsh"
+      },
+      {
+        "from": "build/menu-version-manager.png",
+        "to": "ui/version-manager.png"
       }
     ],
+    "publish": {
+      "provider": "github",
+      "owner": "qufei1993",
+      "repo": "dsh-desktop",
+      "releaseType": "release"
+    },
     "mac": {
       "category": "public.app-category.developer-tools",
       "icon": "build/icon.icns",
-      "target": ["dmg", "zip"],
+      "notarize": true,
+      "target": [
+        "dmg",
+        "zip"
+      ],
       "artifactName": "DSH-Desktop-${version}-${arch}.${ext}",
       "hardenedRuntime": true,
       "gatekeeperAssess": false

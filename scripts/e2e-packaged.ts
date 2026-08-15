@@ -36,9 +36,13 @@ try {
   const hasOfficialBootstrap = await dshWindow.evaluate(() => '__DSH_BOOT__' in window)
   if (!hasOfficialBootstrap) throw new Error('DSH 窗口缺少官方启动标记')
   const managerPromise = electronApp.waitForEvent('window', { timeout: 10_000 })
-  await electronApp.evaluate(({ Menu }) => {
+  await electronApp.evaluate(({ app, Menu }) => {
+    if (app.name !== 'DSH Desktop') throw new Error(`应用名称不正确：${app.name}`)
+    if (!Menu.getApplicationMenu()?.getMenuItemById('about-dsh-desktop')) throw new Error('关于菜单不存在')
+    if (!Menu.getApplicationMenu()?.getMenuItemById('check-for-updates')) throw new Error('应用更新菜单不存在')
     const item = Menu.getApplicationMenu()?.getMenuItemById('version-manager')
     if (!item?.click) throw new Error('版本管理菜单不存在')
+    if (!item.icon || (typeof item.icon !== 'string' && item.icon.isEmpty())) throw new Error('版本管理菜单图标不存在')
     item.click(item, undefined, undefined)
   })
   const manager = await managerPromise
@@ -46,6 +50,7 @@ try {
   await manager.getByText('DSH 0.1.0-rc.6').waitFor()
   await manager.getByRole('button', { name: /全部版本/ }).waitFor()
   await manager.getByText('npm 官方源').waitFor()
+  await manager.getByText('v0.1.0', { exact: true }).waitFor()
   if (process.env.DSH_DESKTOP_E2E_SCREENSHOT) {
     await manager.getByText('0.0.1-rc.1', { exact: true }).waitFor({ timeout: 20_000 })
     await manager.screenshot({ path: process.env.DSH_DESKTOP_E2E_SCREENSHOT, fullPage: true })

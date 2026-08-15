@@ -6,7 +6,7 @@
 
 ## 1. 产品定义
 
-DSH Desktop 是 DeepSeek Harness（简称 DSH）的非官方桌面运行壳。
+DSH Desktop 是由社区维护的 DeepSeek Harness（简称 DSH）桌面客户端。
 
 它只解决三件事：
 
@@ -72,16 +72,16 @@ DSH Desktop 从首版开始同时支持 macOS 和 Windows。两套系统共用�
 - DSH 配置编辑
 - DSH 插件管理
 - 多个 DSH 实例并行运行
-- 自动升级或静默升级
+- 官方 DSH 自动升级或静默升级
 - 自定义 DSH 包源或第三方分发包
 - 修改官方 DSH 启动参数的高级面板
-- DSH Desktop 应用内自动更新
+- DSH Desktop 强制更新或静默更新
 
 ## 4. 技术方案选择
 
 ### 4.1 采用方案
 
-采用 Electron 桌面壳和独立标准 Node.js 运行时：
+采用 Electron 桌面运行宿主和独立标准 Node.js 运行时：
 
 ```text
 Electron 主进程
@@ -128,7 +128,7 @@ flowchart TD
 
 #### Manager Window
 
-只负责壳子的界面：
+只负责 DSH Desktop 的管理界面：
 
 - 显示已安装版本
 - 显示最新官方版本
@@ -205,11 +205,13 @@ DSH 用户数据不属于以上目录设计。DSH Desktop 不计算其大小、�
 
 唯一额外参数是 `--port 0`，这是官方公开支持的参数，用于让操作系统分配空闲端口，避免桌面 App 与已有服务发生固定端口冲突。
 
-桌面壳不修改官方配置层、profile、环境变量含义和 Web 请求。
+DSH Desktop 不修改官方配置层、profile、环境变量含义和 Web 请求。
 
 若某个官方版本升级后出现数据不兼容、插件不兼容或启动错误，DSH Desktop只显示该官方进程的错误摘要，不修改用户数据进行补救。
 
 ## 8. 版本更新模型
+
+官方 DSH 与 DSH Desktop 自身使用两套独立的版本和更新状态，不共用安装目录，也不互相改变选择结果。
 
 ### 8.1 检查更新
 
@@ -232,6 +234,22 @@ DSH 用户数据不属于以上目录设计。DSH Desktop 不计算其大小、�
 - 当前进程停止后，启动所选旧版本。
 - DSH Desktop 不改变旧版本将要读取的官方用户数据。
 - 由官方 DSH 决定数据是否兼容。
+
+### 8.4 DSH Desktop 自身更新
+
+- 更新源只使用本仓库的正式 GitHub Releases。
+- 正式安装版启动后异步检查一次，用户也可从应用菜单主动检查。
+- 发现新版只提示，用户点击后才下载；下载完成后仍由用户决定何时重启安装。
+- macOS arm64、macOS x64 使用独立更新清单，Windows x64 使用默认稳定通道。
+- 应用更新前先停止由 DSH Desktop 托管的官方 DSH 子进程，但不读取或修改 DSH 用户数据。
+- 开发模式禁用更新，草稿 Release 不作为正式更新。
+
+### 8.5 网络代理
+
+- GitHub 应用更新、npm 版本目录查询和官方 DSH 包安装使用同一代理决策。
+- 优先读取标准代理环境变量，其次使用 macOS/Windows 系统代理。
+- 系统为直连时探测 `127.0.0.1:7890`，端口可用则作为本地 HTTP 代理。
+- 官方 DSH 的 `127.0.0.1` 页面使用直连会话，不经过外部代理。
 
 ## 9. 窗口模型
 
@@ -524,7 +542,9 @@ GitHub Actions 使用同一份源代码分别生成三个构建目标：
 - SHA-256 校验文件
 - 第三方许可证和 SBOM
 
-DSH Desktop 的应用更新与 DSH 包更新是两条独立通道。首版只实现 DSH 包更新提示；应用自身更新由 GitHub Releases 下载完成，不做静默自动更新。
+DSH Desktop 的应用更新与 DSH 包更新是两条独立通道。应用自身通过 GitHub Releases 检查、下载并在用户确认后重启安装，不做强制或静默更新。macOS 正式 Release 必须具备有效的 Apple Developer ID 签名；Git 标签必须与应用版本一致。
+
+推送 `v*` 标签后，GitHub Actions 先校验标签、应用版本和 Changelog 章节，再执行三个目标的构建。全部成功后汇总安装包、更新清单、blockmap、SBOM 与三平台 SHA-256，Release 正文只使用 `CHANGELOG.md` 中对应版本的内容。任一版本信息缺失或不一致时停止发布。
 
 ## 18. 验收标准
 
@@ -538,6 +558,7 @@ DSH Desktop 的应用更新与 DSH 包更新是两条独立通道。首版只实
 6. 用户可以继续使用或切回旧版本。
 7. DSH Desktop 不读写或迁移 DSH_HOME 数据。
 8. App 退出后没有遗留 DSH 或 Node.js 进程。
+9. DSH Desktop 能独立检查自身更新，且未经用户操作不会下载或安装。
 9. macOS 和 Windows 安装包都通过真实系统 smoke test。
 
 ## 19. 实现顺序

@@ -3,48 +3,92 @@ name: build
 on:
   push:
     branches: [main]
+    tags: ['v*']
   pull_request:
   workflow_dispatch:
 
 permissions:
   contents: read
 
+concurrency:
+  group: build-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/v') }}
+
 jobs:
   verify:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: npm
       - run: npm ci
       - run: npm run verify
+      - name: Validate release tag and changelog
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          node -e "const p=require('./package.json'); if (process.env.RELEASE_TAG !== 'v'+p.version) throw new Error('Git tag must equal v'+p.version)"
+          node scripts/extract-changelog.mjs "$RELEASE_TAG" CHANGELOG.md > /dev/null
 
   package:
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+    needs: verify
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
         include:
           - runner: macos-15
+            platform: mac
             command: package:mac:arm64
             artifact: mac-arm64
           - runner: macos-15-intel
+            platform: mac
             command: package:mac:x64
             artifact: mac-x64
           - runner: windows-latest
+            platform: win
             command: package:win:x64
             artifact: windows-x64
     runs-on: ${{ matrix.runner }}
     env:
-      CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+      CSC_LINK: ${{ matrix.platform == 'mac' && secrets.MAC_CSC_LINK || secrets.WIN_CSC_LINK }}
+      CSC_KEY_PASSWORD: ${{ matrix.platform == 'mac' && secrets.MAC_CSC_KEY_PASSWORD || secrets.WIN_CSC_KEY_PASSWORD }}
+      APPLE_API_KEY_BASE64: ${{ matrix.platform == 'mac' && secrets.APPLE_API_KEY_BASE64 || '' }}
+      APPLE_API_KEY_ID: ${{ matrix.platform == 'mac' && secrets.APPLE_API_KEY_ID || '' }}
+      APPLE_API_ISSUER: ${{ matrix.platform == 'mac' && secrets.APPLE_API_ISSUER || '' }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: npm
       - run: npm ci
+      - name: Require a signing identity for tagged macOS releases
+        if: startsWith(github.ref, 'refs/tags/v') && matrix.platform == 'mac'
+        shell: bash
+        run: |
+          test -n "$CSC_LINK" && test -n "$CSC_KEY_PASSWORD"
+          test -n "$APPLE_API_KEY_BASE64" && test -n "$APPLE_API_KEY_ID" && test -n "$APPLE_API_ISSUER"
+      - name: Prepare App Store Connect API key
+        if: startsWith(github.ref, 'refs/tags/v') && matrix.platform == 'mac'
+        shell: bash
+        run: |
+          umask 077
+          node -e "require('fs').writeFileSync(process.env.RUNNER_TEMP + '/AuthKey.p8', Buffer.from(process.env.APPLE_API_KEY_BASE64, 'base64'))"
+          echo "APPLE_API_KEY=$RUNNER_TEMP/AuthKey.p8" >> "$GITHUB_ENV"
+      - name: Require a signing certificate for tagged Windows releases
+        if: startsWith(github.ref, 'refs/tags/v') && matrix.platform == 'win'
+        shell: pwsh
+        run: if (-not $env:CSC_LINK -or -not $env:CSC_KEY_PASSWORD) { throw 'Windows release signing secrets are required' }
       - run: npm run test
       - run: npm run ${{ matrix.command }}
       - run: npm run test:packaged
@@ -55,7 +99,51 @@ jobs:
             release/*.dmg
             release/*.zip
             release/*.exe
-            release/SHA256SUMS
+            release/*.blockmap
+            release/latest*.yml
+            release/SHA256SUMS-*
             release/*sbom*
             release/THIRD-PARTY-LICENSES.txt
           if-no-files-found: error
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [verify, package]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify tag matches application version
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          node scripts/version.mjs check
+          node -e "const p=require('./package.json'); if (process.env.RELEASE_TAG !== 'v'+p.version) throw new Error('Git tag must equal v'+p.version)"
+      - name: Extract release notes from CHANGELOG.md
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: node scripts/extract-changelog.mjs "$RELEASE_TAG" CHANGELOG.md > release-notes.md
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: dsh-desktop-*
+          path: release
+          merge-multiple: true
+      - name: Merge platform checksums
+        shell: bash
+        run: cat release/SHA256SUMS-* | sort -k2 > release/SHA256SUMS
+      - uses: softprops/action-gh-release@v2
+        with:
+          name: DSH Desktop ${{ github.ref_name }}
+          body_path: release-notes.md
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          files: |
+            release/*.dmg
+            release/*.zip
+            release/*.exe
+            release/*.blockmap
+            release/latest*.yml
+            release/SHA256SUMS
+            release/*sbom*
+            release/THIRD-PARTY-LICENSES.txt

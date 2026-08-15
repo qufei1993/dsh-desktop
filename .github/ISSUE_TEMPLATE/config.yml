@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 安全漏洞
+    url: https://github.com/qufei1993/dsh-desktop/security/advisories/new
+    about: 请私下报告安全问题，不要创建公开 Issue
+  - name: 支持指南
+    url: https://github.com/qufei1993/dsh-desktop/blob/main/SUPPORT.md
+    about: 先确认问题范围和需要提供的信息

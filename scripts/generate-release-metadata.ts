@@ -49,5 +49,5 @@ for (const artifact of artifacts) {
   const digest = createHash('sha256').update(await readFile(path.join(releaseDir, artifact))).digest('hex')
   sums.push(`${digest}  ${artifact}`)
 }
-await writeFile(path.join(releaseDir, 'SHA256SUMS'), `${sums.join('\n')}\n`)
+await writeFile(path.join(releaseDir, `SHA256SUMS-${process.platform}-${process.arch}`), `${sums.join('\n')}\n`)
 console.log(`Release metadata generated for ${artifacts.length} artifact(s)`)

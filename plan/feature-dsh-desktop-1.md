@@ -1,5 +1,5 @@
 ---
-goal: DSH Desktop 跨平台壳应用首版
+goal: DSH Desktop 跨平台桌面客户端首版
 version: 1.0
 date_created: 2026-08-15
 last_updated: 2026-08-15
@@ -12,7 +12,7 @@ tags: [feature, electron, desktop, dsh]
 
 ![Status: Completed](https://img.shields.io/badge/status-Completed-brightgreen)
 
-实现不修改官方 DeepSeek Harness 的 macOS 与 Windows 桌面壳，负责随应用提供 Node.js、安装和切换官方 DSH 版本、托管官方 Web 进程并在隔离窗口中展示官方页面。
+实现由社区维护、且不修改官方 DeepSeek Harness 的 macOS 与 Windows 桌面客户端，负责随应用提供 Node.js、安装和切换官方 DSH 版本、托管官方 Web 进程并在隔离窗口中展示官方页面。
 
 ## 1. Requirements & Constraints
 
@@ -62,6 +62,9 @@ tags: [feature, electron, desktop, dsh]
 | TASK-009 | 添加真实官方 DSH 冒烟脚本，测试时仅以临时 DSH_HOME 保护用户数据。 | ✅ | 2026-08-15 |
 | TASK-010 | 完成 macOS 本机构建验证和三目标 CI 构建配置，更新 README 与设计状态。 | ✅ | 2026-08-15 |
 | TASK-011 | 执行源码边界扫描、测试、类型检查、构建及产物审计并记录结果。 | ✅ | 2026-08-15 |
+| TASK-012 | 增加关于面板、版本管理菜单图标，以及基于 GitHub Releases 的 DSH Desktop 用户确认式应用内更新。 | ✅ | 2026-08-15 |
+| TASK-013 | 统一 GitHub 更新、npm 查询和 DSH 安装的系统代理与本地 7890 自动探测策略。 | ✅ | 2026-08-15 |
+| TASK-014 | 完成 Tag 驱动的 Electron 跨平台发布、版本同步、Changelog 提取和 Release 资产汇总。 | ✅ | 2026-08-15 |
 
 ## 3. Alternatives
 
@@ -75,6 +78,7 @@ tags: [feature, electron, desktop, dsh]
 - **DEP-002**: electron-builder 生成 macOS 与 Windows 安装包。
 - **DEP-003**: Node.js 官方发行包作为运行 sidecar，npm registry 作为官方 DSH 版本来源。
 - **DEP-004**: Vitest 提供可重复执行的单元与集成测试。
+- **DEP-005**: electron-updater 负责跨平台检查、下载与用户确认后的安装流程。
 
 ## 5. Files
 
