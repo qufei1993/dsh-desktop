@@ -521,10 +521,10 @@ DSH Desktop 默认不记录：
 - 安装包 smoke test 通过
 - 第三方许可证清单生成
 - 安装包 SHA-256 生成
-- macOS 正式版完成 Developer ID 签名和公证
-- Windows 正式版完成代码签名
+- README 与 Release 明确披露 macOS 和 Windows 安装包未使用付费平台证书
+- macOS Gatekeeper 与 Windows SmartScreen 的安装路径完成真实机器验证
 
-缺少签名凭据时可以生成开发构建，但不能标记为稳定 Release。
+当前项目不购买平台开发者证书，正式 Release 允许使用未签名社区构建，但必须提供 SHA-256、SBOM 和清晰的系统安全提示。
 
 ## 17. 构建与发布
 
@@ -542,7 +542,7 @@ GitHub Actions 使用同一份源代码分别生成三个构建目标：
 - SHA-256 校验文件
 - 第三方许可证和 SBOM
 
-DSH Desktop 的应用更新与 DSH 包更新是两条独立通道。应用自身通过 GitHub Releases 检查、下载并在用户确认后重启安装，不做强制或静默更新。macOS 正式 Release 必须具备有效的 Apple Developer ID 签名；Git 标签必须与应用版本一致。
+DSH Desktop 的应用更新与 DSH 包更新是两条独立通道。应用自身通过 GitHub Releases 检查更新，不做强制或静默更新。Windows 可由用户触发应用内下载和安装；由于未使用 Apple Developer ID，macOS 检测到新版后打开 Release 页面，由用户手动下载安装。Git 标签必须与应用版本一致。
 
 推送 `v*` 标签后，GitHub Actions 先校验标签、应用版本和 Changelog 章节，再执行三个目标的构建。全部成功后汇总安装包、更新清单、blockmap、SBOM 与三平台 SHA-256，Release 正文只使用 `CHANGELOG.md` 中对应版本的内容。任一版本信息缺失或不一致时停止发布。
 

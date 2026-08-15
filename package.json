@@ -102,13 +102,14 @@
     "mac": {
       "category": "public.app-category.developer-tools",
       "icon": "build/icon.icns",
-      "notarize": true,
+      "identity": null,
+      "notarize": false,
       "target": [
         "dmg",
         "zip"
       ],
       "artifactName": "DSH-Desktop-${version}-${arch}.${ext}",
-      "hardenedRuntime": true,
+      "hardenedRuntime": false,
       "gatekeeperAssess": false
     },
     "win": {

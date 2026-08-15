@@ -1,6 +1,6 @@
 import { EventEmitter } from 'node:events'
 import type { AppUpdater, ProgressInfo, UpdateInfo } from 'electron-updater'
-import type { AppUpdateSnapshot } from '../shared/contracts'
+import type { AppUpdateDelivery, AppUpdateSnapshot } from '../shared/contracts'
 
 export class DesktopUpdater extends EventEmitter {
   private state: AppUpdateSnapshot
@@ -9,12 +9,15 @@ export class DesktopUpdater extends EventEmitter {
   constructor(
     private readonly updater: AppUpdater,
     currentVersion: string,
-    private readonly supported: boolean
+    private readonly supported: boolean,
+    private readonly delivery: AppUpdateDelivery = 'automatic',
+    private readonly openManualDownload?: () => Promise<void>
   ) {
     super()
     this.state = {
       currentVersion,
       availableVersion: null,
+      delivery,
       status: supported ? 'idle' : 'unsupported',
       percent: null,
       message: supported ? null : '开发模式不检查应用更新'
@@ -42,6 +45,11 @@ export class DesktopUpdater extends EventEmitter {
   async download(): Promise<AppUpdateSnapshot> {
     if (!this.supported) return this.snapshot()
     if (this.state.status !== 'available') throw new Error('当前没有可下载的 DSH Desktop 更新')
+    if (this.delivery === 'manual') {
+      if (!this.openManualDownload) throw new Error('此平台需要从 GitHub Releases 手动下载更新')
+      await this.run(this.openManualDownload)
+      return this.snapshot()
+    }
     await this.run(async () => {
       this.update({ status: 'downloading', percent: 0, message: null })
       await this.updater.downloadUpdate()
@@ -50,6 +58,7 @@ export class DesktopUpdater extends EventEmitter {
   }
 
   install(): void {
+    if (this.delivery === 'manual') throw new Error('此平台需要从 GitHub Releases 手动安装更新')
     if (this.state.status !== 'downloaded') throw new Error('更新尚未下载完成')
     this.updater.quitAndInstall(false, true)
   }

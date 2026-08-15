@@ -49,10 +49,12 @@ export interface InstallProgress {
 }
 
 export type AppUpdateStatus = 'idle' | 'checking' | 'available' | 'downloading' | 'downloaded' | 'up-to-date' | 'error' | 'unsupported'
+export type AppUpdateDelivery = 'automatic' | 'manual'
 
 export interface AppUpdateSnapshot {
   currentVersion: string
   availableVersion: string | null
+  delivery: AppUpdateDelivery
   status: AppUpdateStatus
   percent: number | null
   message: string | null

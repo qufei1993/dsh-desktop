@@ -4,10 +4,7 @@
   <img src="build/icon-source.svg" width="112" alt="DSH Desktop icon">
   <h1>DSH Desktop</h1>
   <p>Run and manage the official DeepSeek Harness without installing Node.js.</p>
-
-  [![Build](https://github.com/qufei1993/dsh-desktop/actions/workflows/build.yml/badge.svg)](https://github.com/qufei1993/dsh-desktop/actions/workflows/build.yml)
-  [![Latest release](https://img.shields.io/github/v/release/qufei1993/dsh-desktop?display_name=tag)](https://github.com/qufei1993/dsh-desktop/releases/latest)
-  [![License](https://img.shields.io/github/license/qufei1993/dsh-desktop)](LICENSE)
+  <p align="center"><a href="https://github.com/qufei1993/dsh-desktop/actions/workflows/build.yml"><img src="https://github.com/qufei1993/dsh-desktop/actions/workflows/build.yml/badge.svg" alt="Build" height="20"></a>&nbsp;&nbsp;<a href="https://github.com/qufei1993/dsh-desktop/releases/latest"><img src="https://img.shields.io/github/v/release/qufei1993/dsh-desktop?display_name=tag" alt="Latest release" height="20"></a>&nbsp;&nbsp;<a href="LICENSE"><img src="https://img.shields.io/github/license/qufei1993/dsh-desktop" alt="License" height="20"></a></p>
 </div>
 
 DSH Desktop is a community-maintained DeepSeek Harness desktop client for macOS and Windows. It bundles Node.js 24 LTS, installs and retains official `@deepseek-ai/dsh` versions, and runs the official `dsh web` interface in a dedicated window.
@@ -30,17 +27,28 @@ After installation, DSH Desktop opens the official DeepSeek Harness interface di
 > [!NOTE]
 > This project is at an early stage. If no installer is available under Releases yet, wait for the first public release. Building from source is not recommended for regular users.
 
-## Features
+## Screenshots
 
-- Bundled Node.js 24 LTS; no system Node.js setup required.
-- A validated official DSH version included with every installer.
-- Search, install, and switch between all DSH versions published to the official npm registry.
-- Keep multiple DSH versions and return to an earlier version when needed.
-- User-controlled DSH Desktop updates from GitHub Releases.
-- Simplified Chinese and English interfaces, with system-language defaults and manual switching.
-- Shared proxy handling for GitHub updates, npm version queries, and DSH package installation.
-- Separate builds for macOS Apple Silicon, macOS Intel, and Windows x64.
-- SHA-256 checksums, two CycloneDX SBOMs, and a third-party license inventory with every release.
+### Official DeepSeek Harness workspace
+
+DSH Desktop launches the official DSH interface directly in a dedicated desktop window.
+
+![Official DeepSeek Harness workspace running in DSH Desktop](docs/images/dsh-workspace.png)
+
+### Version Manager
+
+Install, retain, and switch official DSH versions without changing the official interface or user data.
+
+![DSH Desktop Version Manager](docs/images/version-manager.png)
+
+## Core features
+
+- Cross-platform desktop client for official DeepSeek Harness on macOS and Windows.
+- Bundled Node.js 24 LTS, so users do not need to install Node.js themselves.
+- Install, keep, and switch official `@deepseek-ai/dsh` versions.
+- Run official `dsh web` in a dedicated, sandboxed window.
+- Bilingual UI (English / 简体中文) with manual switching.
+- Built-in release update checks and SHA-256 checksum validation.
 
 ## Product boundaries
 
@@ -52,28 +60,23 @@ DSH Desktop manages the runtime, versions, and local process. It does not:
 - silently upgrade or replace the DSH version selected by the user;
 - expose the local DSH service to the LAN.
 
-Official DSH and DSH Desktop use separate update channels. DSH versions come from npm and are installed by the user. DSH Desktop updates come from this repository's GitHub Releases and are downloaded and installed only with user approval.
+Official DSH and DSH Desktop use separate update channels. DSH versions come from npm and are installed by the user. DSH Desktop checks this repository's GitHub Releases only under user action.
 
-## Network proxy
+## Architecture
 
-Network access uses the first available option:
+```mermaid
+flowchart LR
+  user["User"] -->|start| main["Electron main process"]
+  main --> node["Bundled Node.js 24 LTS"]
+  main --> update["GitHub release updater"]
+  main --> versions["Version Manager"]
+  node --> dsh["@deepseek-ai/dsh"]
+  versions -->|install/query| registry["npm registry"]
+  dsh -->|127.0.0.1:random| window["Sandboxed DSH web window"]
+  update --> releases["GitHub Releases"]
+```
 
-1. Explicit `HTTPS_PROXY`, `HTTP_PROXY`, or related environment variables.
-2. The macOS or Windows system proxy.
-3. A listening proxy at `127.0.0.1:7890` when the system is otherwise configured for direct access.
-4. A direct connection when no proxy is found.
-
-This policy covers DSH Desktop updates, npm version queries, and official DSH package downloads. The official DSH page always connects directly to `127.0.0.1` and never passes through a proxy.
-
-## Security and privacy
-
-- The official DSH process binds only to a random port on `127.0.0.1`.
-- The DSH window exposes neither Electron nor Node.js APIs.
-- The management window receives only a validated, minimal IPC surface.
-- Production builds do not override `DSH_HOME`; official DSH controls its data behavior.
-- Downloaded Node.js runtimes are checked against official SHA-256 manifests, and DSH installs use exact versions.
-
-Report security issues privately according to the [security policy](SECURITY.md). Do not open a public issue.
+Official DSH runs only on local loopback (`127.0.0.1`) and uses minimal IPC.
 
 ## Local development
 
@@ -94,18 +97,6 @@ npm run verify
 npm run test:official
 ```
 
-`verify` runs version consistency checks, type checking, automated tests, the production build, and the product-boundary audit. See the [contribution guide](CONTRIBUTING.md) for the complete workflow.
+`verify` runs consistency checks, type checking, automated tests, the production build, and the product-boundary audit. See [CONTRIBUTING.md](CONTRIBUTING.md), [SUPPORT.md](SUPPORT.md), and [CHANGELOG.md](CHANGELOG.md) for workflow.
 
-## Architecture overview
-
-```text
-Electron main process
-  └─ Bundled Node.js 24 LTS
-      └─ Official @deepseek-ai/dsh web --port 0
-          └─ http://127.0.0.1:<random-port>
-              └─ Sandboxed DSH window
-```
-
-The existing [design specification](docs/superpowers/specs/2026-08-15-dsh-desktop-design.md) documents the full boundary, process model, and data constraints in Chinese. For project governance, support, and release history, see [Maintainers](MAINTAINERS.md), [Support](SUPPORT.md), and the [Changelog](CHANGELOG.md).
-
-Maintainers should also read the [release guide](docs/RELEASING.md) and [repository setup checklist](docs/REPOSITORY_SETUP.md).
+Design details are in [docs/superpowers/specs/2026-08-15-dsh-desktop-design.md](docs/superpowers/specs/2026-08-15-dsh-desktop-design.md) and maintainers should also read [docs/RELEASING.md](docs/RELEASING.md).

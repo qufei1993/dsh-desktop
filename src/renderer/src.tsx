@@ -11,7 +11,7 @@ const empty: AppSnapshot = {
   locale: initialLocale, localePreference: 'system', dismissedLatest: null, installedVersions: [], availableVersions: [], runtimeStatus: 'idle', runtimeUrl: null, error: null
 }
 const emptyAppUpdate: AppUpdateSnapshot = {
-  currentVersion: '0.1.0', availableVersion: null, status: 'idle', percent: null, message: null
+  currentVersion: '0.1.0', availableVersion: null, delivery: 'manual', status: 'idle', percent: null, message: null
 }
 const repositoryUrl = 'https://github.com/qufei1993/dsh-desktop'
 
@@ -126,7 +126,7 @@ function App(): React.JSX.Element {
             : appUpdate.status === 'checking'
               ? <RefreshIcon />
               : appUpdate.status === 'available'
-                ? <DownloadIcon />
+                ? appUpdate.delivery === 'manual' ? <OpenIcon /> : <DownloadIcon />
                 : appUpdate.status === 'downloaded'
                   ? <RestartIcon />
                   : <RefreshIcon />}
@@ -225,7 +225,9 @@ function statusText(status: AppSnapshot['runtimeStatus'], locale: AppLocale): st
 }
 function appUpdateText(update: AppUpdateSnapshot, locale: AppLocale): string {
   const language = copy(locale)
-  if (update.status === 'available') return language.newDesktopVersion(update.availableVersion ?? '')
+  if (update.status === 'available') return update.delivery === 'manual'
+    ? language.newDesktopVersionManual(update.availableVersion ?? '')
+    : language.newDesktopVersion(update.availableVersion ?? '')
   if (update.status === 'downloading') return language.downloadingDesktop(update.availableVersion ?? language.newVersion, Math.round(update.percent ?? 0))
   if (update.status === 'downloaded') return language.desktopDownloaded(update.availableVersion ?? '')
   if (update.status === 'checking') return language.checkingGitHub
@@ -235,7 +237,7 @@ function appUpdateText(update: AppUpdateSnapshot, locale: AppLocale): string {
 }
 function appUpdateButtonText(update: AppUpdateSnapshot, locale: AppLocale): string {
   const language = copy(locale)
-  if (update.status === 'available') return language.downloadUpdate
+  if (update.status === 'available') return update.delivery === 'manual' ? language.openDownloadPage : language.downloadUpdate
   if (update.status === 'downloading') return `${Math.round(update.percent ?? 0)}%`
   if (update.status === 'downloaded') return language.restartInstall
   if (update.status === 'checking') return language.checking
@@ -251,6 +253,7 @@ function localizeMessage(locale: AppLocale, message: string): string {
     '应用更新失败': 'App update failed', '开发模式不检查应用更新': 'App updates are unavailable in development mode',
     '当前已是最新版': 'You are up to date', '更新已下载，重启后安装': 'Update downloaded. Restart to install.',
     '当前没有可下载的 DSH Desktop 更新': 'No DSH Desktop update is available to download', '更新尚未下载完成': 'The update has not finished downloading',
+    '此平台需要从 GitHub Releases 手动下载更新': 'Download the update manually from GitHub Releases on this platform', '此平台需要从 GitHub Releases 手动安装更新': 'Install the update manually from GitHub Releases on this platform',
     '尚未发布可供自动更新的正式版本': 'No published release is currently available for automatic updates',
     '内置 Node.js 运行环境不可用': 'The bundled Node.js runtime is unavailable', '检查版本失败': 'Could not check versions',
     '已有 DSH 版本正在安装': 'Another DSH version is already being installed', '安装失败': 'Installation failed',
@@ -288,9 +291,9 @@ function copy(locale: AppLocale) {
     switchingTo: (version: string) => `Switching to ${version}…`, installingVersion: (version: string) => `Installing ${version}…`,
     noMatchingVersions: 'No matching versions', refreshEmpty: 'Refresh to load versions from the official npm registry.', adjustFilters: 'Try adjusting the filters or search.', unknown: 'Unknown', unknownPublishDate: 'Publish date unknown',
     notRunning: 'Not running', starting: 'Starting', dshRunning: 'DSH running', stopping: 'Stopping', runtimeError: 'Runtime error',
-    newDesktopVersion: (version: string) => `Version ${version} is available. You decide whether to upgrade.`, newVersion: 'new version', downloadingDesktop: (version: string, percent: number) => `Downloading ${version} · ${percent}%`,
+    newDesktopVersion: (version: string) => `Version ${version} is available. You decide whether to upgrade.`, newDesktopVersionManual: (version: string) => `Version ${version} is available. Open GitHub Releases to download it.`, newVersion: 'new version', downloadingDesktop: (version: string, percent: number) => `Downloading ${version} · ${percent}%`,
     desktopDownloaded: (version: string) => `${version} downloaded. Restart to install.`, checkingGitHub: 'Checking GitHub Releases for updates…', upToDate: 'You are up to date', cannotCheckUpdates: 'Unable to check for updates',
-    independentUpdates: 'DSH Desktop updates come from GitHub Releases and are separate from official DSH versions', downloadUpdate: 'Download update', restartInstall: 'Restart and install', checking: 'Checking…', checkAgain: 'Check again', releaseOnly: 'Available in release builds only', checkUpdates: 'Check for updates'
+    independentUpdates: 'DSH Desktop updates come from GitHub Releases and are separate from official DSH versions', downloadUpdate: 'Download update', openDownloadPage: 'Open GitHub download page', restartInstall: 'Restart and install', checking: 'Checking…', checkAgain: 'Check again', releaseOnly: 'Available in release builds only', checkUpdates: 'Check for updates'
   }
   return {
     readingState: '正在读取本机状态…', ready: '准备就绪', completed: '操作完成', failed: '操作失败', appUpdateFailed: '应用更新失败',
@@ -304,9 +307,9 @@ function copy(locale: AppLocale) {
     switchingTo: (version: string) => `正在切换到 ${version}…`, installingVersion: (version: string) => `正在安装 ${version}…`,
     noMatchingVersions: '没有符合条件的版本', refreshEmpty: '点击右上角刷新，从 npm 官方源获取版本。', adjustFilters: '试试调整筛选或搜索内容。', unknown: '未知', unknownPublishDate: '发布时间未知',
     notRunning: '未运行', starting: '启动中', dshRunning: 'DSH 运行中', stopping: '停止中', runtimeError: '运行异常',
-    newDesktopVersion: (version: string) => `发现新版 ${version}，是否升级由你决定`, newVersion: '新版', downloadingDesktop: (version: string, percent: number) => `正在下载 ${version} · ${percent}%`,
+    newDesktopVersion: (version: string) => `发现新版 ${version}，是否升级由你决定`, newDesktopVersionManual: (version: string) => `发现新版 ${version}，请前往 GitHub Releases 下载`, newVersion: '新版', downloadingDesktop: (version: string, percent: number) => `正在下载 ${version} · ${percent}%`,
     desktopDownloaded: (version: string) => `${version} 已下载，重启后安装`, checkingGitHub: '正在从 GitHub Releases 检查更新…', upToDate: '当前已是最新版', cannotCheckUpdates: '暂时无法检查更新',
-    independentUpdates: 'DSH Desktop 更新来自 GitHub Releases，与官方 DSH 版本独立', downloadUpdate: '下载更新', restartInstall: '重启并安装', checking: '检查中…', checkAgain: '再次检查', releaseOnly: '仅正式版可用', checkUpdates: '检查更新'
+    independentUpdates: 'DSH Desktop 更新来自 GitHub Releases，与官方 DSH 版本独立', downloadUpdate: '下载更新', openDownloadPage: '打开 GitHub 下载页', restartInstall: '重启并安装', checking: '检查中…', checkAgain: '再次检查', releaseOnly: '仅正式版可用', checkUpdates: '检查更新'
   }
 }
 

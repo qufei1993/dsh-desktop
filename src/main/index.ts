@@ -13,6 +13,7 @@ import { StateStore } from './state-store'
 import { VersionManager } from './version-manager'
 
 const APP_NAME = 'DSH Desktop'
+const RELEASE_DOWNLOAD_URL = 'https://github.com/qufei1993/dsh-desktop/releases/latest'
 let managerWindow: BrowserWindow | null = null
 let dshWindow: BrowserWindow | null = null
 let controller: AppController | null = null
@@ -313,7 +314,13 @@ app.whenReady().then(async () => {
   const versions = new VersionManager(app.getPath('userData'), path.join(resourcesRoot, 'dsh'), runtime, proxy.url)
   const supervisor = new DshSupervisor(runtime.node)
   controller = new AppController(app.getVersion(), store, new DshRegistry(net.fetch as typeof fetch), versions, supervisor, runtime, normalizeSystemLocale(app.getLocale()))
-  desktopUpdater = new DesktopUpdater(electronUpdater.autoUpdater, app.getVersion(), app.isPackaged)
+  desktopUpdater = new DesktopUpdater(
+    electronUpdater.autoUpdater,
+    app.getVersion(),
+    app.isPackaged,
+    process.platform === 'darwin' ? 'manual' : 'automatic',
+    async () => { await shell.openExternal(RELEASE_DOWNLOAD_URL) }
+  )
   desktopUpdater.on('changed', (snapshot: AppUpdateSnapshot) => {
     sendToManager(channels.appUpdateChanged, snapshot)
     notifyDesktopUpdate(snapshot)

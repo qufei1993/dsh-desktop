@@ -45,4 +45,16 @@ describe('DesktopUpdater', () => {
     expect(await updater.check()).toMatchObject({ status: 'unsupported' })
     expect(fake.checkForUpdates).not.toHaveBeenCalled()
   })
+
+  it('手动更新模式只打开 Release 下载页', async () => {
+    const fake = new FakeUpdater()
+    const openManualDownload = vi.fn(async () => undefined)
+    const updater = new DesktopUpdater(fake as unknown as AppUpdater, '0.1.0', true, 'manual', openManualDownload)
+
+    await updater.check()
+    expect(await updater.download()).toMatchObject({ status: 'available', delivery: 'manual' })
+    expect(openManualDownload).toHaveBeenCalledOnce()
+    expect(fake.downloadUpdate).not.toHaveBeenCalled()
+    expect(() => updater.install()).toThrow('此平台需要从 GitHub Releases 手动安装更新')
+  })
 })

@@ -18,7 +18,7 @@
 - 启用 Private vulnerability reporting，确保 `SECURITY.md` 中的私密报告入口可用。
 - 保持 Secret scanning 与 Push protection 开启（仓库类型支持时）。
 - Actions 默认令牌使用只读权限；发布任务已在工作流内单独申请 `contents: write`。
-- 配置并定期轮换[发布指南](RELEASING.zh-CN.md)列出的签名 Secrets。
+- 在 README 和 Release 说明中持续保留未签名构建提示与校验值核对方法。
 
 ## `main` 分支保护
 
@@ -52,5 +52,5 @@
 - 确认 README 中所有链接可从公开仓库访问。
 - 确认项目名称、图标和社区独立维护声明不会造成官方背书误解。
 - 确认 LICENSE 中的版权所有者信息准确。
-- 完成 macOS 签名与公证、Windows 代码签名的真实安装验证。
-- 从一台没有开发环境的新机器验证安装、卸载和自动更新。
+- 在干净机器上验证 macOS Gatekeeper 与 Windows SmartScreen 的未签名安装流程。
+- 在没有开发环境的机器上验证安装、卸载、Windows 应用内更新和 macOS 手动下载更新。

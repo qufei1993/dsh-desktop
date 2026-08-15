@@ -18,7 +18,7 @@ Repository files cannot reliably enable the settings below. A maintainer should 
 - Enable Private vulnerability reporting so that the private link in `SECURITY.md` works.
 - Keep Secret scanning and Push protection enabled when supported by the repository type.
 - Keep the default Actions token read-only. The release job requests `contents: write` separately.
-- Configure and periodically rotate the signing secrets listed in the [release guide](RELEASING.md).
+- Keep the unsigned-build disclosure and checksum verification instructions visible in the README and Release notes.
 
 ## Protect `main`
 
@@ -52,5 +52,5 @@ The templates reference these labels. Create them before launch:
 - Confirm that every README link works from the public repository.
 - Confirm that the name, icon, and independent community-maintenance statement do not imply official endorsement.
 - Confirm that the copyright holder in `LICENSE` is correct.
-- Test real macOS signing and notarization and Windows code signing.
-- Test installation, uninstallation, and automatic updates on a clean machine without a development environment.
+- Test the unsigned Gatekeeper and SmartScreen installation paths on clean machines.
+- Test installation, uninstallation, Windows in-app updates, and the macOS manual-download update path without a development environment.

@@ -2,29 +2,16 @@ English | [简体中文](RELEASING.zh-CN.md)
 
 # Release Guide
 
-This guide is for DSH Desktop release maintainers. Regular contributors do not need signing credentials.
+This guide is for DSH Desktop release maintainers. The project intentionally publishes unsigned community builds and does not require paid platform certificates.
 
 ## Prerequisites
 
 - Build, CodeQL, and dependency-review checks pass on `main`.
 - `package.json` and `package-lock.json` contain the same version.
 - The release entries have been moved from **Unreleased** to the target version in both changelogs.
-- macOS and Windows signing certificates are configured in GitHub Actions Secrets.
 - The candidate installer has been tested on at least one physical machine.
 
-The release workflow uses these secrets:
-
-| Secret | Purpose |
-| --- | --- |
-| `MAC_CSC_LINK` | macOS Developer ID certificate content or secure download URL |
-| `MAC_CSC_KEY_PASSWORD` | macOS certificate password |
-| `APPLE_API_KEY_BASE64` | Base64-encoded App Store Connect API `.p8` private key |
-| `APPLE_API_KEY_ID` | App Store Connect API key ID |
-| `APPLE_API_ISSUER` | App Store Connect API issuer ID |
-| `WIN_CSC_LINK` | Windows code-signing certificate content or secure download URL |
-| `WIN_CSC_KEY_PASSWORD` | Windows certificate password |
-
-Never place certificates, passwords, or temporary decrypted material in the repository, an issue, a pull request, or build logs. Tagged macOS builds require both signing and Apple notarization credentials. electron-builder signs, notarizes, and staples the application. A formal Release is not created when any required credential is missing.
+No signing secrets are required. GitHub Actions explicitly disables certificate discovery and produces unsigned macOS and Windows artifacts, matching the project's current no-paid-developer-account policy. Release notes and the README must continue to disclose the resulting Gatekeeper and SmartScreen warnings.
 
 ## Publish a release
 
@@ -34,8 +21,8 @@ Never place certificates, passwords, or temporary decrypted material in the repo
 4. Merge the release change and confirm all required `main` checks pass.
 5. Create and push the `vx.y.z` tag from the current `main` commit.
 6. Wait for the `build` workflow. It builds all platforms, extracts English release notes from `CHANGELOG.md`, merges platform checksums, and creates the GitHub Release.
-7. Download the assets and verify `SHA256SUMS`, SBOMs, update metadata, and signatures.
-8. Smoke-test installation, first launch, Version Manager, and update checks on all three supported platform targets.
+7. Download the assets and verify `SHA256SUMS`, SBOMs, and update metadata.
+8. Smoke-test installation, first launch, Version Manager, unsigned-install warnings, and update checks on all three supported platform targets.
 
 The tag must exactly match `package.json`. For example, version `0.2.0` requires tag `v0.2.0`. The Release job fails when they differ.
 
@@ -60,6 +47,8 @@ A formal Release should contain at least:
 - `THIRD-PARTY-LICENSES.txt`.
 
 Never replace an already published installer with a different file under the same name. Withdraw a defective Release and publish a new patch version so that update metadata and binaries remain consistent.
+
+Because macOS automatic installation requires Apple code signing, the macOS app only detects a new version and opens GitHub Releases for manual download. Windows retains the user-controlled in-app download and install flow. Neither platform performs a silent update.
 
 ## Rollback and security releases
 

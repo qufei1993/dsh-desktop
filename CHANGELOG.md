@@ -14,7 +14,7 @@ This file records notable changes to DSH Desktop. Versions follow [Semantic Vers
 - A bundled Node.js 24 LTS runtime and a validated official DSH version.
 - Official npm catalog browsing, installation, retention, and switching for DSH versions.
 - Direct launch into the official DSH interface, with Version Manager available from the application menu.
-- User-controlled DSH Desktop update checks, downloads, and installation through GitHub Releases.
+- User-controlled DSH Desktop updates through GitHub Releases: manual download on macOS and in-app installation on Windows.
 - Automatic proxy selection from environment variables, system settings, or `127.0.0.1:7890`.
 - A native About panel, Version Manager menu icon, and app-update control.
 - Simplified Chinese and English interfaces with system-language defaults and saved user selection.
@@ -25,3 +25,4 @@ This file records notable changes to DSH Desktop. Versions follow [Semantic Vers
 - The DSH page runs in a sandboxed window without preload, Node.js, or Electron APIs.
 - The local DSH service is restricted to `127.0.0.1`.
 - Runtime verification, exact-version installation, and automated product-boundary auditing.
+- Explicit unsigned community builds with published SHA-256 checksums instead of paid platform certificates.
