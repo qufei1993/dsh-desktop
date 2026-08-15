@@ -57,7 +57,7 @@
     "@types/react-dom": "^19.0.0",
     "@types/semver": "^7.7.1",
     "@types/write-file-atomic": "4.0.3",
-    "@vitejs/plugin-react": "5.2.0",
+    "@vitejs/plugin-react": "6.0.5",
     "electron": "43.4.0",
     "electron-builder": "26.15.3",
     "electron-vite": "5.0.0",
