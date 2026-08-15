@@ -70,7 +70,8 @@ jobs:
         if: runner.os == 'macOS'
         shell: bash
         run: |
-          ulimit -n 65536
+          ulimit -n "$(ulimit -Hn)"
+          echo "Open file limit: $(ulimit -n)"
           npm run ${{ matrix.command }}
       - name: Package on Windows
         if: runner.os == 'Windows'
