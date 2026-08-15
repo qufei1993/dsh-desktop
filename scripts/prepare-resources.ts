@@ -54,7 +54,7 @@ async function run(executable: string, args: string[]): Promise<void> {
 async function main(): Promise<void> {
   const node = platform === 'win32' ? path.join(target, 'node.exe') : path.join(target, 'bin', 'node')
   const npmCli = platform === 'win32'
-    ? path.join(target, 'node_modules', 'npm', 'bin', 'npm-cli.js')
+    ? path.join(target, 'npm', 'bin', 'npm-cli.js')
     : path.join(target, 'lib', 'node_modules', 'npm', 'bin', 'npm-cli.js')
   let reusable = false
   try {
@@ -85,6 +85,11 @@ async function main(): Promise<void> {
     await rm(target, { recursive: true, force: true })
     await mkdir(path.dirname(target), { recursive: true })
     await rename(path.join(extractDir, extractedName), target)
+    if (platform === 'win32') {
+      // Keep npm outside a top-level node_modules directory so electron-builder
+      // always copies it as an application resource on Windows.
+      await rename(path.join(target, 'node_modules', 'npm'), path.join(target, 'npm'))
+    }
     await writeFile(path.join(target, 'dsh-desktop-runtime.json'), `${JSON.stringify({ nodeVersion, platform, arch })}\n`)
   } else {
     console.log(`Reusing verified Node.js v${nodeVersion} runtime for ${platform}-${arch}`)

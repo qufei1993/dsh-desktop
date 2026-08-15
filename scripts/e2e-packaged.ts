@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs'
 import { mkdtemp, readdir, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
@@ -23,6 +24,18 @@ async function findExecutable(directory: string): Promise<string | null> {
 
 const executablePath = await findExecutable(path.join(root, 'release'))
 if (!executablePath) throw new Error('release 目录中没有找到已打包的 DSH Desktop')
+const resourcesPath = process.platform === 'darwin'
+  ? path.resolve(executablePath, '..', '..', 'Resources')
+  : path.join(path.dirname(executablePath), 'resources')
+const packagedNode = process.platform === 'win32'
+  ? path.join(resourcesPath, 'runtime', 'node.exe')
+  : path.join(resourcesPath, 'runtime', 'bin', 'node')
+const packagedNpm = process.platform === 'win32'
+  ? path.join(resourcesPath, 'runtime', 'npm', 'bin', 'npm-cli.js')
+  : path.join(resourcesPath, 'runtime', 'lib', 'node_modules', 'npm', 'bin', 'npm-cli.js')
+if (!existsSync(packagedNode) || !existsSync(packagedNpm)) {
+  throw new Error(`打包应用的 Node.js 资源不完整：node=${existsSync(packagedNode)}, npm=${existsSync(packagedNpm)}`)
+}
 const isolatedHome = await mkdtemp(path.join(os.tmpdir(), 'dsh-desktop-e2e-'))
 const electronApp = await electron.launch({
   executablePath,

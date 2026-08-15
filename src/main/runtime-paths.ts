@@ -16,7 +16,7 @@ export function resolveRuntimePaths(resourcesPath: string, isPackaged: boolean):
   const root = path.join(resourcesPath, 'runtime')
   const node = process.platform === 'win32' ? path.join(root, 'node.exe') : path.join(root, 'bin', 'node')
   const npmCli = process.platform === 'win32'
-    ? path.join(root, 'node_modules', 'npm', 'bin', 'npm-cli.js')
+    ? path.join(root, 'npm', 'bin', 'npm-cli.js')
     : path.join(root, 'lib', 'node_modules', 'npm', 'bin', 'npm-cli.js')
 
   if (existsSync(node) && existsSync(npmCli)) return { node, npmCli }
