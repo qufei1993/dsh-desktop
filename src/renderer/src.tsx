@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import semver from 'semver'
 import type { AppSnapshot, InstallProgress } from '../shared/contracts'
+import deepSeekWhale from './deepseek-whale.svg'
 import './style.css'
 
 const empty: AppSnapshot = {
@@ -64,13 +65,13 @@ function App(): React.JSX.Element {
 
   return <main className="app-shell">
     <header className="topbar">
-      <div className="brand-mark" aria-hidden="true"><span>DSH</span></div>
-      <div className="brand-copy"><h1>版本管理</h1><p>DeepSeek Harness Desktop</p></div>
+      <div className="brand-mark" aria-hidden="true"><img src={deepSeekWhale} alt="" /></div>
+      <div className="brand-copy"><h1>版本管理</h1><p>DeepSeek Harness 社区桌面壳</p></div>
       <span className={`runtime-pill runtime-${snapshot.runtimeStatus}`}><i />{statusText(snapshot.runtimeStatus)}</span>
     </header>
 
     <section className="current-card" aria-label="当前 DSH 版本">
-      <div className="current-orbit" aria-hidden="true"><span>⌁</span></div>
+      <div className="current-orbit" aria-hidden="true"><img src={deepSeekWhale} alt="" /></div>
       <div className="current-copy">
         <span className="overline">当前使用</span>
         <div className="current-title">
