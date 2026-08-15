@@ -39,9 +39,9 @@
     "version:set": "node scripts/version.mjs set",
     "verify": "npm run version:check && npm run typecheck && npm test && npm run build && npm run audit:boundary",
     "prepare:runtime": "tsx scripts/prepare-resources.ts",
-    "package:mac:arm64": "npm run prepare:runtime -- --platform=darwin --arch=arm64 && npm run build && electron-builder --mac --arm64 --config.publish.channel=latest-arm64 && npm run release:metadata",
-    "package:mac:x64": "npm run prepare:runtime -- --platform=darwin --arch=x64 && npm run build && electron-builder --mac --x64 --config.publish.channel=latest-x64 && npm run release:metadata",
-    "package:win:x64": "npm run prepare:runtime -- --platform=win32 --arch=x64 && npm run build && electron-builder --win --x64 && npm run release:metadata"
+    "package:mac:arm64": "npm run prepare:runtime -- --platform=darwin --arch=arm64 && npm run build && electron-builder --mac --arm64 --publish never --config.publish.channel=latest-arm64 && npm run release:metadata",
+    "package:mac:x64": "npm run prepare:runtime -- --platform=darwin --arch=x64 && npm run build && electron-builder --mac --x64 --publish never --config.publish.channel=latest-x64 && npm run release:metadata",
+    "package:win:x64": "npm run prepare:runtime -- --platform=win32 --arch=x64 && npm run build && electron-builder --win --x64 --publish never && npm run release:metadata"
   },
   "dependencies": {
     "electron-updater": "6.8.9",
@@ -104,6 +104,7 @@
       "category": "public.app-category.developer-tools",
       "icon": "build/icon.icns",
       "identity": "-",
+      "sign": "./scripts/sign-macos.cjs",
       "notarize": false,
       "target": [
         "dmg",
