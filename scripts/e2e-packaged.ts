@@ -49,24 +49,31 @@ try {
     item.click(item, undefined, undefined)
   })
   const manager = await managerPromise
-  await manager.getByRole('heading', { name: '版本管理' }).waitFor()
+  await manager.getByRole('heading', { name: /版本管理|Version Manager/ }).waitFor()
   await manager.getByText('DSH 0.1.0-rc.6').waitFor()
-  await manager.getByRole('button', { name: /全部版本/ }).waitFor()
-  await manager.getByText('npm 官方源').waitFor()
+  await manager.getByRole('button', { name: /全部版本|All versions/ }).waitFor()
+  await manager.getByText(/npm 官方源|Official npm registry/).waitFor()
   await manager.getByText('v0.1.0', { exact: true }).waitFor()
-  await manager.getByRole('button', { name: '在 GitHub 查看并 Star 项目' }).waitFor()
-  const languageSwitch = manager.getByRole('button', { name: '切换为英文' })
+  await manager.getByRole('button', { name: /在 GitHub 查看并 Star 项目|View on GitHub and star the project/ }).waitFor()
+  const languageSwitch = manager.getByRole('button', { name: /切换为英文|切换为中文/ })
   await languageSwitch.waitFor()
+  const initialSwitchLabel = await languageSwitch.getAttribute('aria-label')
   await languageSwitch.click()
-  await manager.getByRole('heading', { name: 'Version Manager' }).waitFor()
-  await manager.getByRole('button', { name: '切换为中文' }).click()
-  await manager.getByRole('heading', { name: '版本管理' }).waitFor()
+  if (initialSwitchLabel === '切换为英文') {
+    await manager.getByRole('heading', { name: 'Version Manager' }).waitFor()
+    await manager.getByRole('button', { name: '切换为中文' }).click()
+    await manager.getByRole('heading', { name: '版本管理' }).waitFor()
+  } else {
+    await manager.getByRole('heading', { name: '版本管理' }).waitFor()
+    await manager.getByRole('button', { name: '切换为英文' }).click()
+    await manager.getByRole('heading', { name: 'Version Manager' }).waitFor()
+  }
   if (process.env.DSH_DESKTOP_E2E_SCREENSHOT) {
     await manager.getByText('0.0.1-rc.1', { exact: true }).waitFor({ timeout: 20_000 })
     await manager.screenshot({ path: process.env.DSH_DESKTOP_E2E_SCREENSHOT, fullPage: true })
   }
   await dshWindow.close()
-  await manager.getByText('未运行', { exact: true }).waitFor({ timeout: 10_000 })
+  await manager.getByText(/未运行|Not running/, { exact: true }).waitFor({ timeout: 10_000 })
   console.log('Packaged E2E passed: direct official DSH launch, version menu, manager UI, and stop-on-close')
 } finally {
   await electronApp.close()

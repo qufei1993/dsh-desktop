@@ -20,9 +20,13 @@ This file records notable changes to DSH Desktop. Versions follow [Semantic Vers
 - Simplified Chinese and English interfaces with system-language defaults and saved user selection.
 - SHA-256 checksums, CycloneDX SBOMs, and a third-party license inventory.
 
+### Changed
+
+- Reduced release downloads by keeping only target-platform native DSH dependencies, removing Windows debug symbols, and enabling maximum installer compression.
+
 ### Security
 
 - The DSH page runs in a sandboxed window without preload, Node.js, or Electron APIs.
 - The local DSH service is restricted to `127.0.0.1`.
 - Runtime verification, exact-version installation, and automated product-boundary auditing.
-- Explicit unsigned community builds with published SHA-256 checksums instead of paid platform certificates.
+- Community builds without paid platform certificates, using macOS ad-hoc signing and published SHA-256 checksums.

@@ -521,10 +521,10 @@ DSH Desktop 默认不记录：
 - 安装包 smoke test 通过
 - 第三方许可证清单生成
 - 安装包 SHA-256 生成
-- README 与 Release 明确披露 macOS 和 Windows 安装包未使用付费平台证书
+- README 与 Release 明确披露 macOS 仅使用 ad-hoc 签名、Windows 未签名，均未使用受信任平台证书
 - macOS Gatekeeper 与 Windows SmartScreen 的安装路径完成真实机器验证
 
-当前项目不购买平台开发者证书，正式 Release 允许使用未签名社区构建，但必须提供 SHA-256、SBOM 和清晰的系统安全提示。
+当前项目不购买平台开发者证书，正式 Release 允许使用没有受信任证书的社区构建，但必须提供 SHA-256、SBOM 和清晰的系统安全提示。
 
 ## 17. 构建与发布
 
@@ -600,6 +600,6 @@ DSH Desktop 的应用更新与 DSH 包更新是两条独立通道。应用自身
 - `@deepseek-ai/dsh@0.1.0-rc.6` 精确安装和包身份校验通过。
 - 真实官方 DSH Web 冒烟通过，返回 HTTP 200 和 `window.__DSH_BOOT__`。
 - macOS arm64 打包端到端测试通过，覆盖管理界面、随包版本发现、官方窗口启动及关窗停止。
-- 生成 382MB 的未签名开发 DMG，并通过 `hdiutil verify` 完整性校验。
+- 生成约 194MB 的 Apple Silicon 无 Developer ID DMG，并通过打包态端到端测试。
 
-Windows x64 与 macOS x64 的构建、打包端到端测试由同一份 GitHub Actions 矩阵在对应原生 runner 执行。稳定 Release 仍以配置平台签名凭据为前置条件。
+Windows x64 与 macOS x64 的构建、打包端到端测试由同一份 GitHub Actions 矩阵在对应原生 runner 执行。Release 不要求平台签名凭据，但必须披露不受信任发布者提示并提供校验值。

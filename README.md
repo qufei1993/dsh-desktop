@@ -62,6 +62,9 @@ DSH Desktop manages the runtime, versions, and local process. It does not:
 
 Official DSH and DSH Desktop use separate update channels. DSH versions come from npm and are installed by the user. DSH Desktop checks this repository's GitHub Releases only under user action.
 
+> [!WARNING]
+> Current installers are community builds without trusted Apple or Windows code-signing certificates. macOS is ad-hoc signed but not notarized and may require approval under **System Settings → Privacy & Security**. Windows may show an **Unknown publisher** or SmartScreen warning. Verify the published `SHA256SUMS` before installing.
+
 ## Architecture
 
 ```mermaid

@@ -27,5 +27,5 @@
 
 - Keep the versions in `package.json` and `package-lock.json` synchronized through `npm run version:set -- x.y.z`.
 - A release tag must be exactly `vx.y.z`, and the matching changelog section must exist before the tag is pushed.
-- Releases are intentionally unsigned because the project has no paid platform certificates. Do not add signing-secret requirements or imply that builds are signed or notarized.
-- Keep unsigned-install warnings accurate. macOS application updates are check-and-download-manually; Windows may use the in-app updater.
+- Releases intentionally use no paid or trusted platform certificates. macOS uses ad-hoc signing only; Windows installers are unsigned. Do not add signing-secret requirements or imply Apple notarization or trusted publisher status.
+- Keep untrusted-install warnings accurate. macOS application updates are check-and-download-manually; Windows may use the in-app updater.

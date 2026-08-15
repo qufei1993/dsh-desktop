@@ -71,6 +71,7 @@
     "appId": "dev.dsh.desktop",
     "productName": "DSH Desktop",
     "asar": true,
+    "compression": "maximum",
     "directories": {
       "output": "release"
     },
@@ -102,7 +103,7 @@
     "mac": {
       "category": "public.app-category.developer-tools",
       "icon": "build/icon.icns",
-      "identity": null,
+      "identity": "-",
       "notarize": false,
       "target": [
         "dmg",

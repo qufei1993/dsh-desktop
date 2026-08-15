@@ -2,7 +2,7 @@ English | [简体中文](RELEASING.zh-CN.md)
 
 # Release Guide
 
-This guide is for DSH Desktop release maintainers. The project intentionally publishes unsigned community builds and does not require paid platform certificates.
+This guide is for DSH Desktop release maintainers. The project intentionally publishes community builds without trusted platform certificates and does not require paid developer accounts.
 
 ## Prerequisites
 
@@ -11,7 +11,7 @@ This guide is for DSH Desktop release maintainers. The project intentionally pub
 - The release entries have been moved from **Unreleased** to the target version in both changelogs.
 - The candidate installer has been tested on at least one physical machine.
 
-No signing secrets are required. GitHub Actions explicitly disables certificate discovery and produces unsigned macOS and Windows artifacts, matching the project's current no-paid-developer-account policy. Release notes and the README must continue to disclose the resulting Gatekeeper and SmartScreen warnings.
+No signing secrets are required. GitHub Actions disables certificate discovery, applies only an ad-hoc signature to macOS bundles, and produces unsigned Windows installers. Release notes and the README must continue to disclose the resulting Gatekeeper and SmartScreen warnings.
 
 ## Publish a release
 
@@ -22,7 +22,7 @@ No signing secrets are required. GitHub Actions explicitly disables certificate 
 5. Create and push the `vx.y.z` tag from the current `main` commit.
 6. Wait for the `build` workflow. It builds all platforms, extracts English release notes from `CHANGELOG.md`, merges platform checksums, and creates the GitHub Release.
 7. Download the assets and verify `SHA256SUMS`, SBOMs, and update metadata.
-8. Smoke-test installation, first launch, Version Manager, unsigned-install warnings, and update checks on all three supported platform targets.
+8. Smoke-test installation, first launch, Version Manager, untrusted-publisher warnings, and update checks on all three supported platform targets.
 
 The tag must exactly match `package.json`. For example, version `0.2.0` requires tag `v0.2.0`. The Release job fails when they differ.
 

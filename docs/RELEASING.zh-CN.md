@@ -2,7 +2,7 @@
 
 # 发布指南
 
-本指南面向 DSH Desktop 的发布维护者。项目明确发布未签名的社区构建，不要求购买平台开发者证书。
+本指南面向 DSH Desktop 的发布维护者。项目明确发布没有受信任平台证书的社区构建，不要求购买开发者账号。
 
 ## 发布前条件
 
@@ -11,7 +11,7 @@
 - `CHANGELOG.md` 已把本次内容从“未发布”整理到对应版本。
 - 已在至少一台真实机器上验证候选安装包。
 
-发布不需要任何签名 Secrets。GitHub Actions 会显式关闭证书自动发现，生成未签名的 macOS 与 Windows 安装包，与项目当前不购买开发者账号的策略一致。README 和 Release 说明必须持续披露相应的 Gatekeeper 与 SmartScreen 提示。
+发布不需要任何签名 Secrets。GitHub Actions 会关闭证书自动发现，只对 macOS Bundle 做 ad-hoc 签名，并生成未签名的 Windows 安装包。README 和 Release 说明必须持续披露相应的 Gatekeeper 与 SmartScreen 提示。
 
 ## 发布步骤
 
@@ -22,7 +22,7 @@
 5. 在 `main` 当前提交创建并推送 `vx.y.z` 标签。
 6. 等待 `build` 工作流完成跨平台构建；流水线会从 `CHANGELOG.md` 提取当前版本内容、合并三平台校验值并创建 GitHub Release。
 7. 下载 Release 资产，核对 `SHA256SUMS`、SBOM 和更新清单。
-8. 在三类支持平台上完成安装、首次启动、未签名安装提示、版本管理和更新检查冒烟测试。
+8. 在三类支持平台上完成安装、首次启动、不受信任发布者提示、版本管理和更新检查冒烟测试。
 
 标签必须与 `package.json` 完全一致，例如应用版本 `0.2.0` 对应标签 `v0.2.0`。不一致时 Release 任务会失败。
 

@@ -4,6 +4,7 @@ import { existsSync } from 'node:fs'
 import { mkdir, readFile, readdir, rename, rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { pruneBundledResources, type ReleaseArch, type ReleasePlatform } from './prune-bundled-resources.js'
 
 const nodeVersion = '24.18.1'
 const dshVersion = '0.1.0-rc.6'
@@ -98,6 +99,8 @@ async function main(): Promise<void> {
   await run(node, [npmCli, 'install', '--prefix', dshRoot, '--no-audit', '--no-fund', '--prefer-offline', '--registry=https://registry.npmjs.org/'])
   const manifest = JSON.parse(await readFile(path.join(dshRoot, 'node_modules', '@deepseek-ai', 'dsh', 'package.json'), 'utf8')) as { name?: string; version?: string }
   if (manifest.name !== '@deepseek-ai/dsh' || manifest.version !== dshVersion) throw new Error('预装官方 DSH 校验失败')
+  const pruned = await pruneBundledResources(dshRoot, platform as ReleasePlatform, arch as ReleaseArch)
+  console.log(`Pruned ${pruned.removedFiles} non-target/debug files (${(pruned.removedBytes / 1024 / 1024).toFixed(1)} MiB): ${pruned.removedPrebuilds.join(', ') || 'debug symbols only'}`)
   await rm(temporary, { recursive: true, force: true })
   console.log(`Prepared Node.js v${nodeVersion} and @deepseek-ai/dsh@${dshVersion} for ${platform}-${arch}`)
 }
