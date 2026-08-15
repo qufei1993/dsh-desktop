@@ -63,7 +63,7 @@ DSH Desktop 只负责运行环境、版本管理和进程托管。它不会：
 官方 DSH 与 DSH Desktop 使用独立更新通道：DSH 版本来自 npm，由用户主动安装；DSH Desktop 仅在用户操作下检查本仓库 GitHub Releases。
 
 > [!WARNING]
-> 当前安装包是没有受信任 Apple 或 Windows 代码签名证书的社区构建。macOS 仅做 ad-hoc 签名、未经 Apple 公证，可能需要在“系统设置 → 隐私与安全性”中允许打开；Windows 可能显示“未知发布者”或 SmartScreen 提示。安装前请核对 Release 提供的 `SHA256SUMS`。
+> 当前安装包是没有受信任 Apple 或 Windows 代码签名证书的社区构建。macOS 仅做 ad-hoc 签名、未经 Apple 公证，可能需要在“系统设置 → 隐私与安全性”中允许打开；Windows 可能显示“未知发布者”或 SmartScreen 提示。请从最新 Release 下载与系统匹配的安装包。
 
 ## 架构图
 

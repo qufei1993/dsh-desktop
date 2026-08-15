@@ -82,13 +82,8 @@ jobs:
           name: dsh-desktop-${{ matrix.artifact }}
           path: |
             release/*.dmg
-            release/*.zip
             release/*.exe
-            release/*.blockmap
-            release/latest*.yml
-            release/SHA256SUMS-*
-            release/*sbom*
-            release/THIRD-PARTY-LICENSES.txt
+            release/latest.yml
           if-no-files-found: error
 
   release:
@@ -115,20 +110,13 @@ jobs:
           pattern: dsh-desktop-*
           path: release
           merge-multiple: true
-      - name: Merge platform checksums
-        shell: bash
-        run: cat release/SHA256SUMS-* | sort -k2 > release/SHA256SUMS
       - uses: softprops/action-gh-release@v2
         with:
           name: DSH Desktop ${{ github.ref_name }}
           body_path: release-notes.md
           prerelease: ${{ contains(github.ref_name, '-') }}
+          overwrite_files: true
           files: |
             release/*.dmg
-            release/*.zip
             release/*.exe
-            release/*.blockmap
-            release/latest*.yml
-            release/SHA256SUMS
-            release/*sbom*
-            release/THIRD-PARTY-LICENSES.txt
+            release/latest.yml

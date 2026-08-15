@@ -1,6 +1,9 @@
 import { EventEmitter } from 'node:events'
 import type { AppUpdater, ProgressInfo, UpdateInfo } from 'electron-updater'
+import semver from 'semver'
 import type { AppUpdateDelivery, AppUpdateSnapshot } from '../shared/contracts'
+
+type ManualUpdateCheck = () => Promise<string | null>
 
 export class DesktopUpdater extends EventEmitter {
   private state: AppUpdateSnapshot
@@ -11,7 +14,8 @@ export class DesktopUpdater extends EventEmitter {
     currentVersion: string,
     private readonly supported: boolean,
     private readonly delivery: AppUpdateDelivery = 'automatic',
-    private readonly openManualDownload?: () => Promise<void>
+    private readonly openManualDownload?: () => Promise<void>,
+    private readonly manualUpdateCheck?: ManualUpdateCheck
   ) {
     super()
     this.state = {
@@ -38,6 +42,19 @@ export class DesktopUpdater extends EventEmitter {
   async check(): Promise<AppUpdateSnapshot> {
     if (!this.supported) return this.snapshot()
     if (this.state.status === 'downloading' || this.state.status === 'downloaded') return this.snapshot()
+    if (this.delivery === 'manual' && this.manualUpdateCheck) {
+      const checkManualUpdate = this.manualUpdateCheck
+      await this.run(async () => {
+        this.update({ status: 'checking', percent: null, message: null })
+        const version = await checkManualUpdate()
+        if (version && semver.valid(version) && semver.gt(version, this.state.currentVersion)) {
+          this.update({ status: 'available', availableVersion: version, percent: null, message: null })
+        } else {
+          this.update({ status: 'up-to-date', availableVersion: null, percent: null, message: '当前已是最新版' })
+        }
+      })
+      return this.snapshot()
+    }
     await this.run(async () => { await this.updater.checkForUpdates() })
     return this.snapshot()
   }

@@ -14,6 +14,7 @@ import { VersionManager } from './version-manager'
 
 const APP_NAME = 'DSH Desktop'
 const RELEASE_DOWNLOAD_URL = 'https://github.com/qufei1993/dsh-desktop/releases/latest'
+const LATEST_RELEASE_API_URL = 'https://api.github.com/repos/qufei1993/dsh-desktop/releases/latest'
 let managerWindow: BrowserWindow | null = null
 let dshWindow: BrowserWindow | null = null
 let controller: AppController | null = null
@@ -38,6 +39,16 @@ function applyDevelopmentDockIcon(): void {
 
 function isSafeExternalUrl(raw: string): boolean {
   try { return new URL(raw).protocol === 'https:' } catch { return false }
+}
+
+async function checkLatestManualRelease(): Promise<string | null> {
+  const response = await net.fetch(LATEST_RELEASE_API_URL, { headers: { accept: 'application/vnd.github+json' } })
+  if (!response.ok) throw new Error(`GitHub Release 查询失败：${response.status}`)
+  const release = await response.json() as { tag_name?: unknown; draft?: unknown; prerelease?: unknown }
+  if (release.draft === true || release.prerelease === true || typeof release.tag_name !== 'string') return null
+  const version = release.tag_name.replace(/^v/, '')
+  if (!semver.valid(version)) throw new Error('GitHub Release 版本号无效')
+  return version
 }
 
 function sendToManager(channel: string, payload: AppSnapshot | AppUpdateSnapshot | InstallProgress): void {
@@ -319,7 +330,8 @@ app.whenReady().then(async () => {
     app.getVersion(),
     app.isPackaged,
     process.platform === 'darwin' ? 'manual' : 'automatic',
-    async () => { await shell.openExternal(RELEASE_DOWNLOAD_URL) }
+    async () => { await shell.openExternal(RELEASE_DOWNLOAD_URL) },
+    process.platform === 'darwin' ? checkLatestManualRelease : undefined
   )
   desktopUpdater.on('changed', (snapshot: AppUpdateSnapshot) => {
     sendToManager(channels.appUpdateChanged, snapshot)

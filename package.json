@@ -107,8 +107,7 @@
       "sign": "./scripts/sign-macos.cjs",
       "notarize": false,
       "target": [
-        "dmg",
-        "zip"
+        "dmg"
       ],
       "artifactName": "DSH-Desktop-${version}-${arch}.${ext}",
       "hardenedRuntime": false,

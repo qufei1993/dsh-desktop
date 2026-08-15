@@ -20,8 +20,8 @@ No signing secrets are required. GitHub Actions disables certificate discovery, 
 3. Run `npm run verify` and the complete packaging test for the current platform.
 4. Merge the release change and confirm all required `main` checks pass.
 5. Create and push the `vx.y.z` tag from the current `main` commit.
-6. Wait for the `build` workflow. It builds all platforms, extracts English release notes from `CHANGELOG.md`, merges platform checksums, and creates the GitHub Release.
-7. Download the assets and verify `SHA256SUMS`, SBOMs, and update metadata.
+6. Wait for the `build` workflow. It builds all platforms, extracts English release notes from `CHANGELOG.md`, and creates the GitHub Release.
+7. Download and verify the installer for each supported platform; Windows also publishes its update manifest.
 8. Smoke-test installation, first launch, Version Manager, untrusted-publisher warnings, and update checks on all three supported platform targets.
 
 The tag must exactly match `package.json`. For example, version `0.2.0` requires tag `v0.2.0`. The Release job fails when they differ.
@@ -39,12 +39,10 @@ The release fails when the changelog does not contain the matching version secti
 
 A formal Release should contain at least:
 
-- macOS arm64 DMG, ZIP, blockmap, and update metadata;
-- macOS x64 DMG, ZIP, blockmap, and update metadata;
-- Windows x64 NSIS EXE, blockmap, and update metadata;
-- `SHA256SUMS`;
-- CycloneDX SBOMs for DSH Desktop and official DSH;
-- `THIRD-PARTY-LICENSES.txt`.
+- macOS arm64 DMG;
+- macOS x64 DMG;
+- Windows x64 NSIS EXE;
+- `latest.yml` for the Windows in-app updater.
 
 Never replace an already published installer with a different file under the same name. Withdraw a defective Release and publish a new patch version so that update metadata and binaries remain consistent.
 

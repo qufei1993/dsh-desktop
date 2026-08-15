@@ -57,4 +57,14 @@ describe('DesktopUpdater', () => {
     expect(fake.downloadUpdate).not.toHaveBeenCalled()
     expect(() => updater.install()).toThrow('此平台需要从 GitHub Releases 手动安装更新')
   })
+
+  it('手动更新模式可独立查询 GitHub Release，不依赖 macOS 更新包', async () => {
+    const fake = new FakeUpdater()
+    const manualUpdateCheck = vi.fn(async () => '0.2.0')
+    const updater = new DesktopUpdater(fake as unknown as AppUpdater, '0.1.0', true, 'manual', undefined, manualUpdateCheck)
+
+    expect(await updater.check()).toMatchObject({ status: 'available', availableVersion: '0.2.0', delivery: 'manual' })
+    expect(manualUpdateCheck).toHaveBeenCalledOnce()
+    expect(fake.checkForUpdates).not.toHaveBeenCalled()
+  })
 })

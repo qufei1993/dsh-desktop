@@ -20,8 +20,8 @@
 3. 运行 `npm run verify` 和当前平台的完整打包测试。
 4. 合并发布改动并确认 `main` 的必需检查通过。
 5. 在 `main` 当前提交创建并推送 `vx.y.z` 标签。
-6. 等待 `build` 工作流完成跨平台构建；流水线会从 `CHANGELOG.md` 提取当前版本内容、合并三平台校验值并创建 GitHub Release。
-7. 下载 Release 资产，核对 `SHA256SUMS`、SBOM 和更新清单。
+6. 等待 `build` 工作流完成跨平台构建；流水线会从 `CHANGELOG.md` 提取当前版本内容并创建 GitHub Release。
+7. 下载并验证每类支持平台的安装包；Windows 另外发布自动更新所需的更新清单。
 8. 在三类支持平台上完成安装、首次启动、不受信任发布者提示、版本管理和更新检查冒烟测试。
 
 标签必须与 `package.json` 完全一致，例如应用版本 `0.2.0` 对应标签 `v0.2.0`。不一致时 Release 任务会失败。
@@ -39,12 +39,10 @@ npm run release:notes -- v0.2.0 CHANGELOG.md
 
 正式 Release 应至少包含：
 
-- macOS arm64 的 DMG、ZIP、blockmap 和更新清单；
-- macOS x64 的 DMG、ZIP、blockmap 和更新清单；
-- Windows x64 的 NSIS EXE、blockmap 和更新清单；
-- `SHA256SUMS`；
-- DSH Desktop 与官方 DSH 的 CycloneDX SBOM；
-- `THIRD-PARTY-LICENSES.txt`。
+- macOS arm64 DMG；
+- macOS x64 DMG；
+- Windows x64 NSIS EXE；
+- Windows 应用内更新所需的 `latest.yml`。
 
 不要手工替换已经发布的同名安装包。发现问题时撤下有问题的 Release，修复后发布新的补丁版本，确保自动更新元数据与二进制始终对应。
 
