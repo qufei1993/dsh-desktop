@@ -52,7 +52,7 @@
     "zod": "4.4.3"
   },
   "devDependencies": {
-    "@types/node": "^24.0.0",
+    "@types/node": "^26.2.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@types/semver": "^7.7.1",
