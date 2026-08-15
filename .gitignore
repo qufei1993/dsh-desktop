@@ -1,0 +1,7 @@
+node_modules/
+out/
+release/
+build-resources/
+coverage/
+*.log
+.DS_Store

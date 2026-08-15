@@ -1,0 +1,61 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run verify
+
+  package:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15
+            command: package:mac:arm64
+            artifact: mac-arm64
+          - runner: macos-15-intel
+            command: package:mac:x64
+            artifact: mac-x64
+          - runner: windows-latest
+            command: package:win:x64
+            artifact: windows-x64
+    runs-on: ${{ matrix.runner }}
+    env:
+      CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run test
+      - run: npm run ${{ matrix.command }}
+      - run: npm run test:packaged
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dsh-desktop-${{ matrix.artifact }}
+          path: |
+            release/*.dmg
+            release/*.zip
+            release/*.exe
+            release/SHA256SUMS
+            release/*sbom*
+            release/THIRD-PARTY-LICENSES.txt
+          if-no-files-found: error

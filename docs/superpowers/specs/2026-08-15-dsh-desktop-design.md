@@ -2,7 +2,7 @@
 
 日期：2026-08-15
 
-状态：待用户确认
+状态：已实现并完成首轮验证
 
 ## 1. 产品定义
 
@@ -540,7 +540,7 @@ DSH Desktop 的应用更新与 DSH 包更新是两条独立通道。首版只实
 1. 项目骨架、类型化 IPC 和状态机。
 2. 假 DSH CLI 下的进程监督与窗口安全。
 3. 内置 Node.js 和固定官方 DSH 契约测试。
-4. npm 官方版本目录、安装、保留、切换与删除。
+4. npm 官方版本目录、安装、保留与切换。
 5. Manager Window 用户界面。
 6. macOS 和 Windows 打包流水线。
 7. 安装包验收、签名、公证和发布文档。
@@ -558,3 +558,20 @@ DSH Desktop 的应用更新与 DSH 包更新是两条独立通道。首版只实
 - Node.js 发布周期：<https://nodejs.org/en/about/previous-releases>
 - electron-vite：<https://electron-vite.org/guide/>
 - Playwright Electron API：<https://playwright.dev/docs/api/class-electron>
+
+## 21. 实现与验证记录
+
+2026-08-15 完成首版实现。源码位于 `src/`，资源准备和验证脚本位于 `scripts/`，跨平台流水线位于 `.github/workflows/build.yml`。
+
+本机验证结果：
+
+- TypeScript 类型检查通过。
+- Vitest 5 个测试文件、6 个测试用例通过。
+- 生产构建和产品边界审计通过。
+- Node.js v24.18.1 官方发行包下载及 SHA-256 校验通过。
+- `@deepseek-ai/dsh@0.1.0-rc.6` 精确安装和包身份校验通过。
+- 真实官方 DSH Web 冒烟通过，返回 HTTP 200 和 `window.__DSH_BOOT__`。
+- macOS arm64 打包端到端测试通过，覆盖管理界面、随包版本发现、官方窗口启动及关窗停止。
+- 生成 382MB 的未签名开发 DMG，并通过 `hdiutil verify` 完整性校验。
+
+Windows x64 与 macOS x64 的构建、打包端到端测试由同一份 GitHub Actions 矩阵在对应原生 runner 执行。稳定 Release 仍以配置平台签名凭据为前置条件。

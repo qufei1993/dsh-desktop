@@ -1,0 +1,94 @@
+{
+  "name": "dsh-desktop",
+  "version": "0.1.0",
+  "description": "An unofficial desktop shell for the official DeepSeek Harness",
+  "license": "MIT",
+  "author": "qufei1993",
+  "homepage": "https://github.com/qufei1993/dsh-desktop",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/qufei1993/dsh-desktop.git"
+  },
+  "type": "module",
+  "main": "out/main/index.js",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:official": "tsx scripts/smoke-official-dsh.ts",
+    "test:packaged": "tsx scripts/e2e-packaged.ts",
+    "audit:boundary": "tsx scripts/audit-boundary.ts",
+    "release:metadata": "tsx scripts/generate-release-metadata.ts",
+    "verify": "npm run typecheck && npm test && npm run build && npm run audit:boundary",
+    "prepare:runtime": "tsx scripts/prepare-resources.ts",
+    "package:mac:arm64": "npm run prepare:runtime -- --platform=darwin --arch=arm64 && npm run build && electron-builder --mac --arm64 && npm run release:metadata",
+    "package:mac:x64": "npm run prepare:runtime -- --platform=darwin --arch=x64 && npm run build && electron-builder --mac --x64 && npm run release:metadata",
+    "package:win:x64": "npm run prepare:runtime -- --platform=win32 --arch=x64 && npm run build && electron-builder --win --x64 && npm run release:metadata"
+  },
+  "dependencies": {
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "semver": "7.8.5",
+    "write-file-atomic": "7.0.1",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@types/semver": "^7.7.1",
+    "@types/write-file-atomic": "4.0.3",
+    "@vitejs/plugin-react": "5.2.0",
+    "playwright-core": "1.62.1",
+    "electron": "43.4.0",
+    "electron-builder": "26.15.3",
+    "electron-vite": "5.0.0",
+    "tsx": "4.23.12",
+    "typescript": "7.0.2",
+    "vite": "7.3.6",
+    "vitest": "4.1.10"
+  },
+  "build": {
+    "appId": "dev.dsh.desktop",
+    "productName": "DSH Desktop",
+    "asar": true,
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "out/**/*",
+      "package.json",
+      "LICENSE"
+    ],
+    "extraResources": [
+      {
+        "from": "build-resources/runtime",
+        "to": "runtime"
+      },
+      {
+        "from": "build-resources/dsh",
+        "to": "dsh"
+      }
+    ],
+    "mac": {
+      "category": "public.app-category.developer-tools",
+      "icon": "build/icon.icns",
+      "target": ["dmg", "zip"],
+      "artifactName": "DSH-Desktop-${version}-${arch}.${ext}",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false
+    },
+    "win": {
+      "icon": "build/icon.png",
+      "target": "nsis",
+      "artifactName": "DSH-Desktop-Setup-${version}-${arch}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "deleteAppDataOnUninstall": false
+    }
+  }
+}
