@@ -31,18 +31,22 @@ const electronApp = await electron.launch({
 })
 
 try {
-  const manager = await electronApp.firstWindow()
-  await manager.getByRole('heading', { name: 'DSH Desktop' }).waitFor()
-  await manager.getByText('DSH 0.1.0-rc.6').waitFor()
-  const dshWindowPromise = electronApp.waitForEvent('window', { timeout: 45_000 })
-  await manager.getByRole('button', { name: '打开 DSH' }).click()
-  const dshWindow = await dshWindowPromise
+  const dshWindow = await electronApp.firstWindow({ timeout: 45_000 })
   await dshWindow.waitForLoadState('domcontentloaded')
   const hasOfficialBootstrap = await dshWindow.evaluate(() => '__DSH_BOOT__' in window)
   if (!hasOfficialBootstrap) throw new Error('DSH 窗口缺少官方启动标记')
+  const managerPromise = electronApp.waitForEvent('window', { timeout: 10_000 })
+  await electronApp.evaluate(({ Menu }) => {
+    const item = Menu.getApplicationMenu()?.getMenuItemById('version-manager')
+    if (!item?.click) throw new Error('版本管理菜单不存在')
+    item.click(item, undefined, undefined)
+  })
+  const manager = await managerPromise
+  await manager.getByRole('heading', { name: 'DSH Desktop' }).waitFor()
+  await manager.getByText('DSH 0.1.0-rc.6').waitFor()
   await dshWindow.close()
   await manager.getByText('未运行', { exact: true }).waitFor({ timeout: 10_000 })
-  console.log('Packaged E2E passed: manager UI, bundled version, official DSH window, and stop-on-close')
+  console.log('Packaged E2E passed: direct official DSH launch, version menu, manager UI, and stop-on-close')
 } finally {
   await electronApp.close()
   await rm(isolatedHome, { recursive: true, force: true })

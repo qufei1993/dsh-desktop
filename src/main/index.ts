@@ -1,5 +1,6 @@
-import { app, BrowserWindow, ipcMain, shell } from 'electron'
+import { app, BrowserWindow, ipcMain, Menu, Notification, shell } from 'electron'
 import path from 'node:path'
+import semver from 'semver'
 import { channels, exactVersionSchema, type AppSnapshot, type InstallProgress } from '../shared/contracts'
 import { AppController } from './controller'
 import { DshSupervisor } from './dsh-supervisor'
@@ -12,6 +13,8 @@ let managerWindow: BrowserWindow | null = null
 let dshWindow: BrowserWindow | null = null
 let controller: AppController | null = null
 let isQuitting = false
+let isOpeningPrimary = false
+let notifiedVersion: string | null = null
 
 function isSafeExternalUrl(raw: string): boolean {
   try { return new URL(raw).protocol === 'https:' } catch { return false }
@@ -47,9 +50,50 @@ function createManagerWindow(): BrowserWindow {
     if (isSafeExternalUrl(url)) void shell.openExternal(url)
     return { action: 'deny' }
   })
+  window.on('closed', () => { managerWindow = null })
   if (process.env.ELECTRON_RENDERER_URL) void window.loadURL(process.env.ELECTRON_RENDERER_URL)
   else void window.loadFile(path.join(__dirname, '../renderer/index.html'))
   return window
+}
+
+function showManagerWindow(): void {
+  if (managerWindow && !managerWindow.isDestroyed()) {
+    managerWindow.show()
+    managerWindow.focus()
+    return
+  }
+  managerWindow = createManagerWindow()
+}
+
+function installApplicationMenu(): void {
+  const openVersions: Electron.MenuItemConstructorOptions = {
+    id: 'version-manager',
+    label: '版本管理…',
+    accelerator: 'CmdOrCtrl+,',
+    click: showManagerWindow
+  }
+  const template: Electron.MenuItemConstructorOptions[] = [
+    ...(process.platform === 'darwin' ? [{
+      label: app.name,
+      submenu: [openVersions, { type: 'separator' as const }, { role: 'hide' as const }, { role: 'hideOthers' as const }, { type: 'separator' as const }, { role: 'quit' as const }]
+    }] : [{ label: 'DSH Desktop', submenu: [openVersions, { type: 'separator' as const }, { role: 'quit' as const }] }]),
+    { label: '编辑', submenu: [{ role: 'undo' }, { role: 'redo' }, { type: 'separator' }, { role: 'cut' }, { role: 'copy' }, { role: 'paste' }, { role: 'selectAll' }] },
+    { label: '窗口', submenu: [{ role: 'minimize' }, { role: 'zoom' }] }
+  ]
+  Menu.setApplicationMenu(Menu.buildFromTemplate(template))
+}
+
+function notifyDshUpdate(snapshot: AppSnapshot): void {
+  if (!snapshot.latestVersion || !snapshot.selectedVersion || snapshot.dismissedLatest === snapshot.latestVersion) return
+  if (!semver.gt(snapshot.latestVersion, snapshot.selectedVersion) || notifiedVersion === snapshot.latestVersion) return
+  notifiedVersion = snapshot.latestVersion
+  if (!Notification.isSupported()) return
+  const notification = new Notification({
+    title: `DSH ${snapshot.latestVersion} 可以安装`,
+    body: `当前继续使用 ${snapshot.selectedVersion}。点击打开版本管理。`
+  })
+  notification.on('click', showManagerWindow)
+  notification.show()
 }
 
 async function openDshWindow(rawUrl: string): Promise<void> {
@@ -97,6 +141,25 @@ async function openDshWindow(rawUrl: string): Promise<void> {
   await window.loadURL(rawUrl)
 }
 
+async function openPrimaryWindow(): Promise<void> {
+  if (!controller || isOpeningPrimary) return
+  isOpeningPrimary = true
+  try {
+    const current = await controller.snapshot()
+    if (current.runtimeStatus === 'running' && current.runtimeUrl) {
+      await openDshWindow(current.runtimeUrl)
+      return
+    }
+    const launched = await controller.launch()
+    if (!launched.runtimeUrl) throw new Error('官方 DSH 未返回本地地址')
+    await openDshWindow(launched.runtimeUrl)
+  } catch {
+    showManagerWindow()
+  } finally {
+    isOpeningPrimary = false
+  }
+}
+
 function registerIpc(instance: AppController): void {
   const assertManager = (event: Electron.IpcMainInvokeEvent): void => {
     if (!managerWindow || event.sender.id !== managerWindow.webContents.id) throw new Error('拒绝未知窗口调用')
@@ -134,24 +197,26 @@ function registerIpc(instance: AppController): void {
 }
 
 app.whenReady().then(async () => {
+  if (process.platform === 'win32') app.setAppUserModelId('dev.dsh.desktop')
   const resourcesRoot = app.isPackaged ? process.resourcesPath : path.join(app.getAppPath(), 'build-resources')
   const runtime = resolveRuntimePaths(resourcesRoot, app.isPackaged)
   const store = new StateStore(app.getPath('userData'))
   const versions = new VersionManager(app.getPath('userData'), path.join(resourcesRoot, 'dsh'), runtime)
   const supervisor = new DshSupervisor(runtime.node)
   controller = new AppController(app.getVersion(), store, new DshRegistry(), versions, supervisor, runtime)
-  managerWindow = createManagerWindow()
   controller.on('snapshot', (snapshot: AppSnapshot) => {
     sendToManager(channels.stateChanged, snapshot)
     if (['idle', 'failed'].includes(snapshot.runtimeStatus) && dshWindow && !dshWindow.isDestroyed()) dshWindow.close()
   })
   controller.on('progress', (progress: InstallProgress) => sendToManager(channels.installProgress, progress))
   registerIpc(controller)
+  installApplicationMenu()
   await controller.initialize()
-  void controller.refresh()
+  await openPrimaryWindow()
+  void controller.refresh().then(notifyDshUpdate)
 
   app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) managerWindow = createManagerWindow()
+    if (BrowserWindow.getAllWindows().length === 0) void openPrimaryWindow()
   })
 }).catch((error) => {
   console.error(error instanceof Error ? error.message : 'DSH Desktop 初始化失败')

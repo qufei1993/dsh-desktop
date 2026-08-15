@@ -107,11 +107,13 @@ Tauri 仍然需要额外携带 Node.js，同时引入 Rust、系统 WebView 差�
 
 ```mermaid
 flowchart TD
-    User[用户] --> Manager[Manager Window]
+    User[用户] --> Shell[DSH Desktop 启动控制器]
+    Shell --> Supervisor[DSH Process Supervisor]
+    User -. 版本管理菜单 .-> Manager[Manager Window]
     Manager --> IPC[类型化 IPC]
     IPC --> Catalog[DSH Version Catalog]
     IPC --> Installer[DSH Version Installer]
-    IPC --> Supervisor[DSH Process Supervisor]
+    IPC --> Supervisor
     Catalog --> Registry[官方 npm Registry]
     Installer --> Node[内置 Node.js 24 LTS]
     Installer --> Versions[App 用户目录中的 DSH 版本]
@@ -131,8 +133,10 @@ flowchart TD
 - 显示已安装版本
 - 显示最新官方版本
 - 展示安装进度
-- 发起安装、启动、停止、切换和删除命令
+- 发起安装、启动、停止和切换命令
 - 展示错误摘要
+
+Manager Window 不是正常启动的首屏。App 优先直接启动当前所选官方 DSH 并显示 DSH Window；用户只在应用菜单中主动打开版本管理，或在没有可用版本、官方进程启动失败时看到 Manager Window。
 
 #### Version Catalog
 
@@ -233,6 +237,8 @@ DSH 用户数据不属于以上目录设计。DSH Desktop 不计算其大小、�
 
 采用两个 BrowserWindow，隔离桌面管理能力与官方页面。
 
+正常启动只展示 DSH Window。Manager Window 按需创建，不作为进入官方页面的中间步骤。
+
 ### 9.1 Manager Window
 
 - 加载 DSH Desktop 自己的本地 React 页面。
@@ -254,7 +260,7 @@ DSH 用户数据不属于以上目录设计。DSH Desktop 不计算其大小、�
 - 用户点击的 HTTPS 外部链接经过协议校验后交给系统浏览器
 - 允许官方页面下载用户主动导出的文件
 
-关闭 DSH Window 时停止其对应 DSH 子进程并返回 Manager Window。若进程仍在运行，界面明确提示关闭会停止当前任务。
+关闭 DSH Window 时停止其对应 DSH 子进程，不自动打开 Manager Window。版本管理始终可以从应用菜单进入。
 
 ## 10. 进程状态机
 
@@ -463,7 +469,8 @@ DSH Desktop 默认不记录：
 
 ### 16.4 Electron E2E
 
-- 首次启动显示内置 DSH 已就绪。
+- 首次启动直接显示内置官方 DSH 页面。
+- 版本管理页只通过应用菜单或启动失败兜底打开。
 - 无系统 Node.js 时启动内置版本。
 - Manager Window 只能调用白名单 IPC。
 - DSH Window 没有 preload 和 Node.js API。

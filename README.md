@@ -4,6 +4,8 @@
 
 DSH Desktop 解决的是安装和启动门槛：应用自带 Node.js 24 LTS，可安装、保留、切换官方 `@deepseek-ai/dsh` 版本，并把官方 `dsh web` 页面放进独立桌面窗口。它不修改 DeepSeek Harness，不复制官方界面，也不接管模型、密钥、会话、Skills、MCP 或用户数据。
 
+正常启动会直接进入官方 DeepSeek Harness 页面。版本管理位于系统菜单的“版本管理…”中；只有没有可用版本或官方进程启动失败时，才会自动显示管理页面。
+
 > DSH Desktop 是社区项目，与 DeepSeek 官方无隶属或背书关系。DeepSeek Harness 仍按其自身许可证和行为运行。
 
 ## 首版能力
