@@ -66,7 +66,15 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run test
-      - run: npm run ${{ matrix.command }}
+      - name: Package on macOS
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          ulimit -n 65536
+          npm run ${{ matrix.command }}
+      - name: Package on Windows
+        if: runner.os == 'Windows'
+        run: npm run ${{ matrix.command }}
       - run: npm run test:packaged
       - uses: actions/upload-artifact@v4
         with:
