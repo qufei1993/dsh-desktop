@@ -1,25 +1,27 @@
-# 变更日志
+English | [简体中文](CHANGELOG.zh-CN.md)
 
-本文件记录 DSH Desktop 的重要变化。版本号遵循[语义化版本](https://semver.org/lang/zh-CN/)。
+# Changelog
 
-## 未发布
+This file records notable changes to DSH Desktop. Versions follow [Semantic Versioning](https://semver.org/).
+
+## Unreleased
 
 ## [0.1.0] - 2026-08-15
 
-### 新增
+### Added
 
-- macOS Apple Silicon、macOS Intel 与 Windows x64 桌面应用。
-- 随包 Node.js 24 LTS 与经过校验的官方 DSH 版本。
-- npm 官方 DSH 全版本查询、安装、保留和切换。
-- 启动时直达官方 DSH 页面，版本管理从系统菜单进入。
-- DSH Desktop 自身的 GitHub Releases 更新检查、下载与安装流程。
-- 自动跟随环境变量、系统代理或本机 `127.0.0.1:7890` 代理。
-- 原生“关于 DSH Desktop”、版本管理菜单图标和右上角应用更新入口。
-- 简体中文与 English 界面，可跟随系统语言或记住用户选择。
-- SHA-256 校验值、CycloneDX SBOM 和第三方许可证清单。
+- Desktop applications for macOS Apple Silicon, macOS Intel, and Windows x64.
+- A bundled Node.js 24 LTS runtime and a validated official DSH version.
+- Official npm catalog browsing, installation, retention, and switching for DSH versions.
+- Direct launch into the official DSH interface, with Version Manager available from the application menu.
+- User-controlled DSH Desktop update checks, downloads, and installation through GitHub Releases.
+- Automatic proxy selection from environment variables, system settings, or `127.0.0.1:7890`.
+- A native About panel, Version Manager menu icon, and app-update control.
+- Simplified Chinese and English interfaces with system-language defaults and saved user selection.
+- SHA-256 checksums, CycloneDX SBOMs, and a third-party license inventory.
 
-### 安全
+### Security
 
-- DSH 页面使用无 preload 的沙箱窗口，不暴露 Node.js 或 Electron API。
-- DSH 本地服务地址限制为 `127.0.0.1`。
-- 资源校验、精确版本安装和产品边界自动审计。
+- The DSH page runs in a sandboxed window without preload, Node.js, or Electron APIs.
+- The local DSH service is restricted to `127.0.0.1`.
+- Runtime verification, exact-version installation, and automated product-boundary auditing.

@@ -1,21 +1,23 @@
-# 维护者与治理
+English | [简体中文](MAINTAINERS.zh-CN.md)
 
-## 当前维护者
+# Maintainers and Governance
 
-- [@qufei1993](https://github.com/qufei1993) — 项目负责人、发布维护者
+## Current maintainer
 
-## 决策方式
+- [@qufei1993](https://github.com/qufei1993) — project lead and release maintainer
 
-项目处于早期阶段，由当前维护者对产品边界、架构、安全、发布和社区管理作最终决定。日常改动优先通过 Issue 与 Pull Request 公开讨论；重要决策应记录在设计文档、Issue 或 Pull Request 中。
+## Decision process
 
-评审主要考虑用户价值、是否符合产品边界、跨平台维护成本、安全风险、测试覆盖和长期可维护性。没有回复不代表接受提案。
+DSH Desktop is at an early stage. The current maintainer makes final decisions about product boundaries, architecture, security, releases, and community management. Routine changes should be discussed through issues and pull requests. Important decisions should be recorded in a design document, issue, or pull request.
 
-## 成为维护者
+Reviews consider user value, product boundaries, cross-platform maintenance cost, security risk, test coverage, and long-term maintainability. A lack of response does not indicate acceptance.
 
-长期、稳定贡献代码、评审、文档或社区支持，并展现出对项目边界和安全责任的理解后，可由现有维护者邀请加入。权限遵循最小授权原则，并可在长期不活跃或违反行为准则时调整。
+## Becoming a maintainer
 
-## 发布权限
+Contributors who participate consistently in code, reviews, documentation, or community support and demonstrate an understanding of the project's boundaries and security responsibilities may be invited to become maintainers. Access follows the principle of least privilege and may be adjusted after extended inactivity or a Code of Conduct violation.
 
-GitHub Release、代码签名凭据和安全公告仅由明确授权的发布维护者操作。发布流程以仓库内的自动化和[贡献指南](CONTRIBUTING.md)为准。
+## Release authority
 
-具体操作见[发布指南](docs/RELEASING.md)与[GitHub 仓库上线清单](docs/REPOSITORY_SETUP.md)。
+Only explicitly authorized release maintainers may operate GitHub Releases, code-signing credentials, and security advisories. Releases follow repository automation and the [contribution guide](CONTRIBUTING.md).
+
+See the [release guide](docs/RELEASING.md) and [repository setup checklist](docs/REPOSITORY_SETUP.md) for operational details.

@@ -1,40 +1,42 @@
-# GitHub 仓库上线清单
+English | [简体中文](REPOSITORY_SETUP.zh-CN.md)
 
-以下设置无法仅通过仓库文件可靠开启，首次公开前由维护者在 GitHub 网页端完成。
+# GitHub Repository Setup Checklist
 
-## 基本信息
+Repository files cannot reliably enable the settings below. A maintainer should configure them in the GitHub web interface before the repository becomes public.
 
-- Description：`Community-maintained desktop client for DeepSeek Harness, with bundled Node.js and version management.`
-- Website：指向最新 Release 或项目主页。
-- Topics：`deepseek`、`deepseek-harness`、`electron`、`desktop-app`、`typescript`。
-- 启用 Issues；需要社区问答时再启用 Discussions。
-- 启用 Automatically delete head branches。
+## Repository details
 
-## 安全设置
+- Description: `Community-maintained desktop client for DeepSeek Harness, with bundled Node.js and version management.`
+- Website: point to the latest Release or project homepage.
+- Topics: `deepseek`, `deepseek-harness`, `electron`, `desktop-app`, and `typescript`.
+- Enable Issues. Enable Discussions later if the project needs community Q&A.
+- Enable **Automatically delete head branches**.
 
-- 启用 Dependency graph、Dependabot alerts 和 Dependabot security updates。
-- 启用 Private vulnerability reporting，确保 `SECURITY.md` 中的私密报告入口可用。
-- 保持 Secret scanning 与 Push protection 开启（仓库类型支持时）。
-- Actions 默认令牌使用只读权限；发布任务已在工作流内单独申请 `contents: write`。
-- 配置并定期轮换[发布指南](RELEASING.md)列出的签名 Secrets。
+## Security settings
 
-## `main` 分支保护
+- Enable Dependency graph, Dependabot alerts, and Dependabot security updates.
+- Enable Private vulnerability reporting so that the private link in `SECURITY.md` works.
+- Keep Secret scanning and Push protection enabled when supported by the repository type.
+- Keep the default Actions token read-only. The release job requests `contents: write` separately.
+- Configure and periodically rotate the signing secrets listed in the [release guide](RELEASING.md).
 
-建议创建 Ruleset：
+## Protect `main`
 
-- 禁止强制推送和删除分支。
-- 合并必须通过 Pull Request。
-- 至少需要 1 次批准；新提交后撤销旧批准。
-- 要求所有讨论解决后再合并。
-- 要求分支保持最新。
-- 必需检查至少包括 `verify`、三平台 `package`、`Analyze TypeScript` 和 `dependency-review`。
-- 管理员也遵守规则；仅为安全热修复保留受审计的旁路权限。
+Create a ruleset that:
 
-仓库公开后先运行一次所有工作流，再把 GitHub 实际显示的检查名称加入 Ruleset，避免名称不一致导致无法合并。
+- blocks force pushes and branch deletion;
+- requires changes to arrive through a pull request;
+- requires at least one approval and dismisses stale approvals after new commits;
+- requires all conversations to be resolved;
+- requires the branch to be up to date;
+- requires at least `verify`, all three platform `package` jobs, `Analyze TypeScript`, and `dependency-review`;
+- applies to administrators, with an audited bypass reserved for security emergencies.
 
-## Issue 标签
+Run every workflow once after the repository becomes public, then add the exact check names displayed by GitHub to the ruleset. This avoids blocking merges because of a name mismatch.
 
-模板会引用以下标签，首次上线时确保它们存在：
+## Issue labels
+
+The templates reference these labels. Create them before launch:
 
 - `bug`
 - `enhancement`
@@ -45,10 +47,10 @@
 - `good first issue`
 - `help wanted`
 
-## 首次发布前
+## Before the first release
 
-- 确认 README 中所有链接可从公开仓库访问。
-- 确认项目名称、图标和社区独立维护声明不会造成官方背书误解。
-- 确认 LICENSE 中的版权所有者信息准确。
-- 完成 macOS 签名与公证、Windows 代码签名的真实安装验证。
-- 从一台没有开发环境的新机器验证安装、卸载和自动更新。
+- Confirm that every README link works from the public repository.
+- Confirm that the name, icon, and independent community-maintenance statement do not imply official endorsement.
+- Confirm that the copyright holder in `LICENSE` is correct.
+- Test real macOS signing and notarization and Windows code signing.
+- Test installation, uninstallation, and automatic updates on a clean machine without a development environment.

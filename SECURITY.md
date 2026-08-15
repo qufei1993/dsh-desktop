@@ -1,35 +1,37 @@
-# 安全策略
+English | [简体中文](SECURITY.zh-CN.md)
 
-## 支持范围
+# Security Policy
 
-项目仍处于 `0.x` 早期阶段。安全修复只保证进入最新发布版本；旧版本可能不会单独回补。
+## Supported versions
 
-| 版本 | 安全更新 |
+DSH Desktop is still in its early `0.x` stage. Security fixes are guaranteed only in the latest release; older releases may not receive backports.
+
+| Version | Security updates |
 | --- | --- |
-| 最新 GitHub Release | 支持 |
-| 更早版本 | 不保证 |
-| 未发布源码快照 | 不保证 |
+| Latest GitHub Release | Supported |
+| Earlier releases | Not guaranteed |
+| Unreleased source snapshots | Not guaranteed |
 
-## 私下报告漏洞
+## Report a vulnerability privately
 
-请勿为疑似漏洞创建公开 Issue，也不要附带真实密钥、用户数据或可直接利用的细节。
+Do not open a public issue for a suspected vulnerability. Do not include real credentials, user data, or directly exploitable details in public channels.
 
-请在仓库的 **Security → Report a vulnerability** 中提交私密漏洞报告：
+Use **Security → Report a vulnerability** in the repository:
 
 https://github.com/qufei1993/dsh-desktop/security/advisories/new
 
-报告尽量包含：
+Include as much of the following as possible:
 
-- 受影响版本、系统和 CPU 架构；
-- 漏洞影响与攻击前提；
-- 最小复现步骤或概念验证；
-- 建议修复方式（如有）；
-- 是否已向 DeepSeek 官方或相关依赖项目报告。
+- affected version, operating system, and CPU architecture;
+- impact and attack prerequisites;
+- minimal reproduction steps or a proof of concept;
+- a suggested fix, if available;
+- whether the issue has also been reported to DeepSeek or an affected dependency.
 
-维护者会尽量在 7 天内确认收到报告，并在验证后同步处理进度。修复时间取决于影响、复杂度和上游依赖；发布前请避免公开披露。
+Maintainers will aim to acknowledge the report within seven days and provide progress updates after validation. Resolution time depends on impact, complexity, and upstream dependencies. Avoid public disclosure until a fix is available.
 
-## 项目安全边界
+## Security boundary
 
-DSH Desktop 负责桌面客户端、内置 Node.js、官方 DSH 包的安装与本地进程托管。官方 `@deepseek-ai/dsh` 自身的漏洞、模型服务行为和用户配置通常属于上游范围。若无法判断，请仍然私下报告，我们会协助分流。
+DSH Desktop owns the desktop client, bundled Node.js runtime, official DSH package installation, and local process supervision. Vulnerabilities inside the official `@deepseek-ai/dsh` package, model-service behavior, and user configuration generally belong upstream. If the boundary is unclear, report the issue privately and we will help route it.
 
-项目不会通过 Issue 或聊天索取 API Key、签名证书、账号密码或完整用户数据目录。
+The project will never ask for API keys, signing certificates, account passwords, or a complete user data directory through an issue or chat.

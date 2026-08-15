@@ -1,26 +1,28 @@
-# 贡献指南
+English | [简体中文](CONTRIBUTING.zh-CN.md)
 
-感谢你帮助改进 DSH Desktop。无论是缺陷报告、文档修正、测试还是代码贡献，都欢迎参与。
+# Contributing
 
-参与项目即表示你同意遵守[行为准则](CODE_OF_CONDUCT.md)。安全漏洞请按[安全策略](SECURITY.md)私下报告，不要提交公开 Issue。
+Thank you for helping improve DSH Desktop. Bug reports, documentation fixes, tests, and code contributions are welcome.
 
-## 开始之前
+By participating, you agree to follow the [Code of Conduct](CODE_OF_CONDUCT.md). Report vulnerabilities privately according to the [Security Policy](SECURITY.md); do not open a public issue for a security concern.
 
-提交较大功能前，请先创建 Feature Request，说明使用场景、产品边界和替代方案，避免双方在方向不一致时投入大量时间。小型修复和文档改进可以直接提交 Pull Request。
+## Before you start
 
-项目坚持以下边界：
+Open a Feature Request before implementing a large change. Describe the user problem, product boundaries, and alternatives so that maintainers can confirm the direction before significant work begins. Small fixes and documentation improvements may go directly to a pull request.
 
-- 不 fork、修改、注入或重新编译官方 DeepSeek Harness。
-- 不依赖 DSH 私有 API。
-- 不接管 DSH 的模型、密钥、会话、Skills、MCP 或数据目录。
-- 不把 DSH 服务暴露到回环地址之外。
-- 安装版本必须来自官方 npm 包 `@deepseek-ai/dsh`，且固定到精确版本。
+The project maintains these boundaries:
 
-不符合这些边界的功能不会合并。
+- Do not fork, modify, inject into, or rebuild official DeepSeek Harness.
+- Do not depend on private DSH APIs.
+- Do not take ownership of DSH models, keys, sessions, Skills, MCP, or its data directory.
+- Do not expose the DSH service beyond the loopback interface.
+- Install only exact versions of the official `@deepseek-ai/dsh` npm package.
 
-## 开发环境
+Changes outside these boundaries will not be merged.
 
-需要 macOS 或 Windows、Node.js 22.19+ 或 24+、npm 10+ 和 Git。
+## Development environment
+
+You need macOS or Windows, Node.js 22.19+ or 24+, npm 10+, and Git.
 
 ```bash
 git clone https://github.com/qufei1993/dsh-desktop.git
@@ -30,49 +32,49 @@ npm run prepare:runtime
 npm run dev
 ```
 
-`prepare:runtime` 会下载较大的运行时和官方 DSH 包。它们只保存在 `build-resources/`，不应提交到 Git。
+`prepare:runtime` downloads the relatively large runtime and official DSH package. They remain under `build-resources/` and must not be committed.
 
-## 提交改动
+## Make a change
 
-1. 从最新的 `main` 创建短生命周期分支。
-2. 保持改动聚焦，并为行为变化补充测试和文档。
-3. 不要提交密钥、签名证书、用户数据、构建目录或安装包。
-4. 使用清晰的提交信息，建议格式为 `类型: 简短说明`，例如 `fix: 修复版本切换后的进程回收`。
-5. 创建 Pull Request 前完成本地验证。
+1. Create a short-lived branch from the latest `main`.
+2. Keep the change focused, and add tests and documentation for behavioral changes.
+3. Do not commit secrets, signing certificates, user data, build directories, or installers.
+4. Use a clear commit message in the form `type: short description`, such as `fix: clean up the process after version switching`.
+5. Complete local verification before opening a pull request.
 
-推荐的提交类型包括 `feat`、`fix`、`docs`、`test`、`refactor`、`build` 和 `chore`。
+Recommended commit types are `feat`, `fix`, `docs`, `test`, `refactor`, `build`, and `chore`.
 
-## 验证要求
+## Verify the change
 
-所有改动至少运行：
+Run at least:
 
 ```bash
 npm run verify
 ```
 
-涉及内置运行时、DSH 启动或打包的改动还应运行：
+Changes involving the bundled runtime, DSH startup, or packaging should also run:
 
 ```bash
 npm run test:official
 npm run test:packaged
 ```
 
-`test:packaged` 需要先在当前平台生成安装包。无法执行某项平台测试时，请在 Pull Request 中明确说明原因和已完成的替代验证。
+`test:packaged` requires an installer built for the current platform. If a platform test is unavailable, explain why and list the alternative checks completed in the pull request.
 
-## Pull Request 要求
+## Pull request requirements
 
-- 说明问题、方案和用户可见变化。
-- 关联对应 Issue；没有 Issue 时说明背景。
-- 列出实际运行过的测试。
-- UI 变化提供截图或录屏。
-- 依赖变化解释必要性，并提交同步更新的 `package-lock.json`。
-- 不混入无关格式化或重构。
-- 如有用户可见变化，在 `CHANGELOG.md` 的“未发布”部分记录。
+- Explain the problem, approach, and user-visible behavior.
+- Link the related issue, or provide enough context when no issue exists.
+- List the tests that were actually run.
+- Include screenshots or a recording for UI changes.
+- Explain dependency changes and commit the updated `package-lock.json`.
+- Avoid unrelated formatting or refactoring.
+- Record user-visible changes under **Unreleased** in both `CHANGELOG.md` and `CHANGELOG.zh-CN.md`.
 
-维护者可能要求拆分过大的 Pull Request。合并方式由维护者根据提交历史选择，通常使用 squash merge。
+Maintainers may ask for an oversized pull request to be split. The merge strategy depends on the commit history and will usually be squash merge.
 
-## 发布
+## Releases
 
-公开版本由维护者发布。版本号遵循语义化版本；Git 标签必须为 `v<package.json 中的版本>`。推送标签后，CI 会验证、跨平台打包、生成校验值与 SBOM，并创建 GitHub Release。
+Maintainers publish public releases. Versions follow Semantic Versioning, and the Git tag must be `v<version from package.json>`. A pushed tag triggers verification, cross-platform packaging, checksums, SBOM generation, and GitHub Release creation.
 
-签名密钥和公证凭据只存放在 GitHub Actions Secrets 中，禁止写入仓库、日志或 Issue。
+Signing keys and notarization credentials belong only in GitHub Actions Secrets. Never place them in the repository, logs, or issues.

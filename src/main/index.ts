@@ -12,6 +12,7 @@ import { resolveRuntimePaths } from './runtime-paths'
 import { StateStore } from './state-store'
 import { VersionManager } from './version-manager'
 
+const APP_NAME = 'DSH Desktop'
 let managerWindow: BrowserWindow | null = null
 let dshWindow: BrowserWindow | null = null
 let controller: AppController | null = null
@@ -23,7 +24,16 @@ let notifiedDesktopVersion: string | null = null
 let activeLocale: AppLocale = 'zh-CN'
 let activeLocalePreference: LocalePreference = 'system'
 
-app.setName('DSH Desktop')
+app.setName(APP_NAME)
+if (process.platform === 'darwin') process.title = APP_NAME
+
+function applyDevelopmentDockIcon(): void {
+  if (process.platform !== 'darwin' || app.isPackaged) return
+  const dock = app.dock
+  if (!dock) return
+  const icon = nativeImage.createFromPath(path.join(app.getAppPath(), 'build', 'icon.png'))
+  if (!icon.isEmpty()) dock.setIcon(icon)
+}
 
 function isSafeExternalUrl(raw: string): boolean {
   try { return new URL(raw).protocol === 'https:' } catch { return false }
@@ -86,6 +96,7 @@ function installApplicationMenu(): void {
     label: copy.versionManager,
     icon: menuIcon.isEmpty() ? undefined : menuIcon,
     accelerator: 'CmdOrCtrl+,',
+    enabled: controller !== null,
     click: showManagerWindow
   }
   const about: Electron.MenuItemConstructorOptions = {
@@ -96,11 +107,12 @@ function installApplicationMenu(): void {
   const checkUpdates: Electron.MenuItemConstructorOptions = {
     id: 'check-for-updates',
     label: copy.checkUpdates,
+    enabled: desktopUpdater !== null,
     click: () => { showManagerWindow(); void desktopUpdater?.check() }
   }
   const template: Electron.MenuItemConstructorOptions[] = [
     ...(process.platform === 'darwin' ? [{
-      label: app.name,
+      label: APP_NAME,
       submenu: [about, { type: 'separator' as const }, openVersions, checkUpdates, languageMenu(copy), { type: 'separator' as const }, { role: 'hide' as const, label: copy.hide }, { role: 'hideOthers' as const, label: copy.hideOthers }, { type: 'separator' as const }, { role: 'quit' as const, label: copy.quit }]
     }] : [{ label: 'DSH Desktop', submenu: [about, { type: 'separator' as const }, openVersions, checkUpdates, languageMenu(copy), { type: 'separator' as const }, { role: 'quit' as const, label: copy.quit }] }]),
     { label: copy.edit, submenu: [{ role: 'undo', label: copy.undo }, { role: 'redo', label: copy.redo }, { type: 'separator' }, { role: 'cut', label: copy.cut }, { role: 'copy', label: copy.copy }, { role: 'paste', label: copy.paste }, { role: 'selectAll', label: copy.selectAll }] },
@@ -122,7 +134,7 @@ function languageMenu(copy: ReturnType<typeof mainCopy>): Electron.MenuItemConst
 function updateAboutPanel(): void {
   const copy = mainCopy(activeLocale)
   app.setAboutPanelOptions({
-    applicationName: 'DSH Desktop',
+    applicationName: APP_NAME,
     applicationVersion: app.getVersion(),
     version: copy.version(app.getVersion()),
     copyright: 'Copyright © 2026 DSH Desktop contributors',
@@ -287,7 +299,10 @@ function registerIpc(instance: AppController): void {
   })
 }
 
+installApplicationMenu()
+
 app.whenReady().then(async () => {
+  applyDevelopmentDockIcon()
   if (process.platform === 'win32') app.setAppUserModelId('dev.dsh.desktop')
   const proxy = await configureNetworkProxy(session.defaultSession)
   await applyNetworkProxy(electronUpdater.autoUpdater.netSession, proxy)

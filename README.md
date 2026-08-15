@@ -1,81 +1,83 @@
-<div align="center">
-  <img src="build/icon-source.svg" width="112" alt="DSH Desktop 图标">
-  <h1>DSH Desktop</h1>
-  <p>让普通用户无需安装 Node.js，也能直接运行和管理官方 DeepSeek Harness。</p>
+<p align="center">English | <a href="README.zh-CN.md">简体中文</a></p>
 
-  [![构建状态](https://github.com/qufei1993/dsh-desktop/actions/workflows/build.yml/badge.svg)](https://github.com/qufei1993/dsh-desktop/actions/workflows/build.yml)
-  [![最新版本](https://img.shields.io/github/v/release/qufei1993/dsh-desktop?display_name=tag)](https://github.com/qufei1993/dsh-desktop/releases/latest)
-  [![许可证](https://img.shields.io/github/license/qufei1993/dsh-desktop)](LICENSE)
+<div align="center">
+  <img src="build/icon-source.svg" width="112" alt="DSH Desktop icon">
+  <h1>DSH Desktop</h1>
+  <p>Run and manage the official DeepSeek Harness without installing Node.js.</p>
+
+  [![Build](https://github.com/qufei1993/dsh-desktop/actions/workflows/build.yml/badge.svg)](https://github.com/qufei1993/dsh-desktop/actions/workflows/build.yml)
+  [![Latest release](https://img.shields.io/github/v/release/qufei1993/dsh-desktop?display_name=tag)](https://github.com/qufei1993/dsh-desktop/releases/latest)
+  [![License](https://img.shields.io/github/license/qufei1993/dsh-desktop)](LICENSE)
 </div>
 
-DSH Desktop 是由社区维护、面向 macOS 和 Windows 的 DeepSeek Harness 桌面客户端。应用自带 Node.js 24 LTS，可安装、保留和切换官方 `@deepseek-ai/dsh` 版本，并在独立窗口中运行官方 `dsh web` 页面。
+DSH Desktop is a community-maintained DeepSeek Harness desktop client for macOS and Windows. It bundles Node.js 24 LTS, installs and retains official `@deepseek-ai/dsh` versions, and runs the official `dsh web` interface in a dedicated window.
 
 > [!IMPORTANT]
-> 本项目由社区独立维护，与 DeepSeek 官方无隶属关系。DSH Desktop 不修改 DeepSeek Harness；官方 DSH 仍按其自身许可证和行为运行。
+> This project is maintained independently by the community and is not affiliated with DeepSeek. DSH Desktop does not modify DeepSeek Harness; the official DSH package continues to operate under its own license and behavior.
 
-## 下载与使用
+## Download and use
 
-前往 [GitHub Releases](https://github.com/qufei1993/dsh-desktop/releases/latest) 下载与你的系统匹配的安装包：
+Download the installer for your system from [GitHub Releases](https://github.com/qufei1993/dsh-desktop/releases/latest):
 
-| 系统 | 安装包 |
+| System | Installer |
 | --- | --- |
 | macOS Apple Silicon | `DSH-Desktop-*-arm64.dmg` |
 | macOS Intel | `DSH-Desktop-*-x64.dmg` |
 | Windows 10/11 x64 | `DSH-Desktop-Setup-*-x64.exe` |
 
-安装并打开后，应用会直接进入官方 DeepSeek Harness 页面。需要安装或切换 DSH 版本时，从系统菜单打开“版本管理…”。
+After installation, DSH Desktop opens the official DeepSeek Harness interface directly. Open **Version Manager…** from the application menu when you need to install or switch DSH versions.
 
 > [!NOTE]
-> 项目尚处于早期阶段。如果 Releases 中暂时没有安装包，请等待首个公开版本，不建议普通用户从源码构建。
+> This project is at an early stage. If no installer is available under Releases yet, wait for the first public release. Building from source is not recommended for regular users.
 
-## 核心能力
+## Features
 
-- 内置 Node.js 24 LTS，无需配置系统 Node.js。
-- 随安装包提供一个经过校验的官方 DSH 版本。
-- 从 npm 官方仓库读取全部 DSH 历史版本，可搜索、安装和切换。
-- 多个 DSH 版本并存，升级后仍可回到旧版本。
-- DSH Desktop 可从 GitHub Releases 检查更新，由用户决定下载和重启安装。
-- 支持简体中文和 English，可跟随系统语言或由用户手动切换。
-- GitHub 更新、npm 版本查询和 DSH 包安装会统一跟随本机代理。
-- macOS Apple Silicon、macOS Intel 和 Windows x64 独立构建。
-- 发布物附带 SHA-256 校验值、两份 CycloneDX SBOM 和第三方许可证清单。
+- Bundled Node.js 24 LTS; no system Node.js setup required.
+- A validated official DSH version included with every installer.
+- Search, install, and switch between all DSH versions published to the official npm registry.
+- Keep multiple DSH versions and return to an earlier version when needed.
+- User-controlled DSH Desktop updates from GitHub Releases.
+- Simplified Chinese and English interfaces, with system-language defaults and manual switching.
+- Shared proxy handling for GitHub updates, npm version queries, and DSH package installation.
+- Separate builds for macOS Apple Silicon, macOS Intel, and Windows x64.
+- SHA-256 checksums, two CycloneDX SBOMs, and a third-party license inventory with every release.
 
-## 清晰的产品边界
+## Product boundaries
 
-DSH Desktop 只负责运行环境、版本管理和进程托管。它不会：
+DSH Desktop manages the runtime, versions, and local process. It does not:
 
-- fork、patch、重新编译或向官方 DSH 页面注入代码；
-- 管理 API Key、模型、会话、插件、Skills 或 MCP；
-- 读取、迁移、备份或删除 DSH 用户数据；
-- 自动升级或强制替换用户选择的 DSH 版本；
-- 将本地 DSH 服务暴露到局域网。
+- fork, patch, rebuild, or inject code into official DSH;
+- manage API keys, models, sessions, plugins, Skills, or MCP;
+- read, migrate, back up, or delete DSH user data;
+- silently upgrade or replace the DSH version selected by the user;
+- expose the local DSH service to the LAN.
 
-官方 DSH 与 DSH Desktop 使用两套独立更新通道：DSH 版本来自 npm，由用户主动安装；DSH Desktop 更新来自本仓库的 GitHub Releases，由用户决定是否下载和重启安装。
+Official DSH and DSH Desktop use separate update channels. DSH versions come from npm and are installed by the user. DSH Desktop updates come from this repository's GitHub Releases and are downloaded and installed only with user approval.
 
-## 网络代理
+## Network proxy
 
-网络访问依次使用以下策略：
+Network access uses the first available option:
 
-1. 优先使用 `HTTPS_PROXY`、`HTTP_PROXY` 等明确设置的代理；
-2. 其次跟随 macOS 或 Windows 系统代理；
-3. 如果系统为直连，但检测到 `127.0.0.1:7890` 正在监听，则自动使用该本地代理，与 Skills Hub 的默认行为一致；
-4. 以上均未发现时使用直连。
+1. Explicit `HTTPS_PROXY`, `HTTP_PROXY`, or related environment variables.
+2. The macOS or Windows system proxy.
+3. A listening proxy at `127.0.0.1:7890` when the system is otherwise configured for direct access.
+4. A direct connection when no proxy is found.
 
-这套代理同时覆盖 DSH Desktop 的 GitHub 更新、npm 版本目录查询和官方 DSH 包下载。官方 DSH 的本地页面始终直接访问 `127.0.0.1`，不会绕到代理服务器。
+This policy covers DSH Desktop updates, npm version queries, and official DSH package downloads. The official DSH page always connects directly to `127.0.0.1` and never passes through a proxy.
 
-## 安全与隐私
+## Security and privacy
 
-- 官方 DSH 进程只绑定 `127.0.0.1` 的随机端口。
-- DSH 页面窗口不暴露 Electron 或 Node.js API。
-- 管理窗口只拥有经过校验的最小 IPC 能力。
-- 生产环境不覆盖 `DSH_HOME`，数据行为由官方 DSH 决定。
-- 下载的 Node.js 运行时依据官方 SHA-256 清单校验，DSH 安装固定到精确版本。
+- The official DSH process binds only to a random port on `127.0.0.1`.
+- The DSH window exposes neither Electron nor Node.js APIs.
+- The management window receives only a validated, minimal IPC surface.
+- Production builds do not override `DSH_HOME`; official DSH controls its data behavior.
+- Downloaded Node.js runtimes are checked against official SHA-256 manifests, and DSH installs use exact versions.
 
-发现安全问题时，请按[安全策略](SECURITY.md)私下报告，不要创建公开 Issue。
+Report security issues privately according to the [security policy](SECURITY.md). Do not open a public issue.
 
-## 本地开发
+## Local development
 
-仅开发者需要 Node.js 22.19+ 或 24+：
+Developers need Node.js 22.19+ or 24+:
 
 ```bash
 npm ci
@@ -83,27 +85,27 @@ npm run prepare:runtime
 npm run dev
 ```
 
-`prepare:runtime` 会下载并校验锁定的 Node.js 24 LTS，再使用该运行时安装随包 DSH。生成内容位于被 Git 忽略的 `build-resources/`。
+`prepare:runtime` downloads and validates the pinned Node.js 24 LTS runtime, then installs the bundled DSH version with that runtime. Generated files are stored under the ignored `build-resources/` directory.
 
-提交改动前运行：
+Before submitting changes, run:
 
 ```bash
 npm run verify
 npm run test:official
 ```
 
-`verify` 包含类型检查、自动测试、生产构建和产品边界审计。完整开发流程与变更要求见[贡献指南](CONTRIBUTING.md)。
+`verify` runs version consistency checks, type checking, automated tests, the production build, and the product-boundary audit. See the [contribution guide](CONTRIBUTING.md) for the complete workflow.
 
-## 架构概览
+## Architecture overview
 
 ```text
-Electron 主进程
-  └─ 内置 Node.js 24 LTS
-      └─ 官方 @deepseek-ai/dsh web --port 0
-          └─ http://127.0.0.1:<随机端口>
-              └─ 沙箱化 DSH 窗口
+Electron main process
+  └─ Bundled Node.js 24 LTS
+      └─ Official @deepseek-ai/dsh web --port 0
+          └─ http://127.0.0.1:<random-port>
+              └─ Sandboxed DSH window
 ```
 
-更完整的边界、进程模型和数据约束见[设计说明](docs/superpowers/specs/2026-08-15-dsh-desktop-design.md)。项目维护方式、支持范围和版本变化分别记录在[维护者说明](MAINTAINERS.md)、[支持指南](SUPPORT.md)与[变更日志](CHANGELOG.md)中。
+The existing [design specification](docs/superpowers/specs/2026-08-15-dsh-desktop-design.md) documents the full boundary, process model, and data constraints in Chinese. For project governance, support, and release history, see [Maintainers](MAINTAINERS.md), [Support](SUPPORT.md), and the [Changelog](CHANGELOG.md).
 
-准备维护或发布仓库时，请继续阅读[发布指南](docs/RELEASING.md)和[GitHub 仓库上线清单](docs/REPOSITORY_SETUP.md)。
+Maintainers should also read the [release guide](docs/RELEASING.md) and [repository setup checklist](docs/REPOSITORY_SETUP.md).

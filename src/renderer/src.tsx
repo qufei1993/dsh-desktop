@@ -13,6 +13,7 @@ const empty: AppSnapshot = {
 const emptyAppUpdate: AppUpdateSnapshot = {
   currentVersion: '0.1.0', availableVersion: null, status: 'idle', percent: null, message: null
 }
+const repositoryUrl = 'https://github.com/qufei1993/dsh-desktop'
 
 type VersionFilter = 'all' | 'installed' | 'available'
 interface VersionRow { version: string; publishedAt: string | null; source: 'bundled' | 'installed' | null; installed: boolean }
@@ -102,9 +103,19 @@ function App(): React.JSX.Element {
         {snapshot.locale === 'zh-CN' ? 'English' : '中文'}
       </button>
       <div className={`desktop-version desktop-version-${appUpdate.status}`} title={appUpdateText(appUpdate, snapshot.locale)}>
-        <strong>v{appUpdate.currentVersion}</strong>
         <button
           type="button"
+          className="desktop-repo-link"
+          aria-label={language.starOnGitHub}
+          title={language.starOnGitHub}
+          onClick={() => void window.dshDesktop.openExternal(repositoryUrl)}
+        >
+          <strong>v{appUpdate.currentVersion}</strong>
+          <StarIcon />
+        </button>
+        <button
+          type="button"
+          className="desktop-update-button"
           aria-label={appUpdateButtonText(appUpdate, snapshot.locale)}
           title={`${appUpdateButtonText(appUpdate, snapshot.locale)}: ${appUpdateText(appUpdate, snapshot.locale)}`}
           disabled={['checking', 'downloading', 'unsupported'].includes(appUpdate.status)}
@@ -267,7 +278,7 @@ function localizeMessage(locale: AppLocale, message: string): string {
 function copy(locale: AppLocale) {
   if (locale === 'en-US') return {
     readingState: 'Reading local state…', ready: 'Ready', completed: 'Completed', failed: 'Operation failed', appUpdateFailed: 'App update failed',
-    versionManager: 'Version Manager', communityClient: 'DeepSeek Harness community desktop client', switchToEnglish: 'Switch to English', switchToChinese: '切换为中文',
+    versionManager: 'Version Manager', communityClient: 'DeepSeek Harness community desktop client', switchToEnglish: 'Switch to English', switchToChinese: '切换为中文', starOnGitHub: 'View on GitHub and star the project',
     currentDshVersion: 'Current DSH version', currentlyUsing: 'Currently using', dshNotInstalled: 'DSH is not installed', current: 'Current', bundled: 'Bundled', updateAvailable: 'Update available',
     officialFeaturesUnchanged: 'Launched by DSH Desktop. Official features and data remain unchanged.', stop: 'Stop', openDsh: 'Open DSH', startDsh: 'Start DSH', stoppingDsh: 'Stopping DSH…', openingDsh: 'Opening DSH…', startingDsh: 'Starting DSH…',
     versionFilters: 'Version filters', versions: 'Versions', allVersions: 'All versions', installed: 'Installed', available: 'Available', installedVersions: 'Installed versions', availableVersions: 'Available versions',
@@ -283,7 +294,7 @@ function copy(locale: AppLocale) {
   }
   return {
     readingState: '正在读取本机状态…', ready: '准备就绪', completed: '操作完成', failed: '操作失败', appUpdateFailed: '应用更新失败',
-    versionManager: '版本管理', communityClient: 'DeepSeek Harness 社区桌面客户端', switchToEnglish: '切换为英文', switchToChinese: '切换为中文',
+    versionManager: '版本管理', communityClient: 'DeepSeek Harness 社区桌面客户端', switchToEnglish: '切换为英文', switchToChinese: '切换为中文', starOnGitHub: '在 GitHub 查看并 Star 项目',
     currentDshVersion: '当前 DSH 版本', currentlyUsing: '当前使用', dshNotInstalled: '尚未安装 DSH', current: '当前', bundled: '随应用提供', updateAvailable: '可更新',
     officialFeaturesUnchanged: '由 DSH Desktop 启动，官方功能和数据保持原样。', stop: '停止', openDsh: '打开 DSH', startDsh: '启动 DSH', stoppingDsh: '正在停止 DSH…', openingDsh: '正在打开 DSH…', startingDsh: '正在启动 DSH…',
     versionFilters: '版本筛选', versions: '版本', allVersions: '全部版本', installed: '已安装', available: '可安装', installedVersions: '已安装版本', availableVersions: '可安装版本',
@@ -306,6 +317,7 @@ const DownloadIcon = (): React.JSX.Element => <Svg><path d="M12 3v12m0 0 4-4m-4 
 const SearchIcon = (): React.JSX.Element => <Svg><circle cx="11" cy="11" r="6"/><path d="m16 16 4 4"/></Svg>
 const RefreshIcon = (): React.JSX.Element => <Svg><path d="M20 7v5h-5M4 17v-5h5"/><path d="M18.1 9A7 7 0 0 0 6 6.5L4 12m16 0-2 5.5A7 7 0 0 1 5.9 15"/></Svg>
 const RestartIcon = (): React.JSX.Element => <Svg><path d="M20 6v5h-5"/><path d="M18.2 9A7.5 7.5 0 1 0 19 15"/></Svg>
+const StarIcon = (): React.JSX.Element => <Svg><path d="m12 3 2.7 5.5 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1-4.4-4.3 6.1-.9L12 3Z"/></Svg>
 const OpenIcon = (): React.JSX.Element => <Svg><path d="M14 4h6v6m0-6-9 9"/><path d="M19 13v5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5"/></Svg>
 const ShieldIcon = (): React.JSX.Element => <Svg><path d="M12 3 5 6v5c0 4.5 2.8 7.8 7 10 4.2-2.2 7-5.5 7-10V6l-7-3Z"/><path d="m9 12 2 2 4-4"/></Svg>
 const NpmIcon = (): React.JSX.Element => <svg viewBox="0 0 36 14" aria-hidden="true"><path fill="currentColor" d="M0 0h36v12H18v2h-8v-2H0V0Zm2 2v8h4V4h2v6h4V2H2Zm12 0v10h4v-2h6V2H14Zm4 2h2v4h-2V4Zm8-2v8h4V4h2v6h2V2h-8Z"/></svg>

@@ -1,27 +1,29 @@
-# 社区行为准则
+English | [简体中文](CODE_OF_CONDUCT.zh-CN.md)
 
-DSH Desktop 希望成为一个友善、专业、让不同经验水平的人都能安全参与的社区。
+# Community Code of Conduct
 
-## 我们鼓励的行为
+DSH Desktop aims to provide a welcoming, professional community where people with different levels of experience can participate safely.
 
-- 尊重不同背景、观点和经验。
-- 针对问题和代码讨论，避免针对个人。
-- 给出可复现的信息、建设性的反馈和清晰的改进建议。
-- 主动承认错误，并帮助修复由自己造成的问题。
-- 尊重用户隐私、知识产权和项目边界。
+## Expected behavior
 
-## 不可接受的行为
+- Respect different backgrounds, perspectives, and experience levels.
+- Discuss the problem and the code rather than attacking individuals.
+- Provide reproducible information, constructive feedback, and clear improvement suggestions.
+- Acknowledge mistakes and help repair problems you caused.
+- Respect user privacy, intellectual property, and project boundaries.
 
-- 骚扰、侮辱、歧视、威胁或人身攻击。
-- 发布他人的隐私信息、凭据或未公开漏洞。
-- 垃圾信息、恶意干扰、冒充官方或误导用户。
-- 利用项目社区推广与讨论无关的商业内容。
-- 其他会让参与者处于不安全或不受欢迎环境的行为。
+## Unacceptable behavior
 
-## 适用范围与处理
+- Harassment, insults, discrimination, threats, or personal attacks.
+- Publishing another person's private information, credentials, or undisclosed vulnerabilities.
+- Spam, deliberate disruption, impersonation, or misleading claims of endorsement.
+- Promoting unrelated commercial content through project channels.
+- Any other behavior that creates an unsafe or unwelcoming environment.
 
-本准则适用于仓库、Issue、Pull Request、讨论区及代表本项目参与的其他公共空间。
+## Scope and enforcement
 
-遇到违反行为准则的情况，请通过维护者的 GitHub 主页私下联系，附上链接、时间和必要证据。不要在公开讨论中披露受影响者的私人信息。维护者会尽快确认，并可根据严重程度采取提醒、删除内容、临时限制或永久禁止参与等措施。
+This policy applies to the repository, issues, pull requests, discussions, and other public spaces where someone represents this project.
 
-维护者有责任以一致、尊重隐私的方式解释和执行本准则。
+Report violations privately through the maintainer's GitHub profile and include relevant links, timestamps, and evidence. Do not disclose an affected person's private information in public. Maintainers will review the report and may respond with a warning, content removal, temporary restriction, or permanent participation ban depending on severity.
+
+Maintainers are responsible for applying this policy consistently and with respect for privacy.

@@ -38,6 +38,9 @@ try {
   const managerPromise = electronApp.waitForEvent('window', { timeout: 10_000 })
   await electronApp.evaluate(({ app, Menu }) => {
     if (app.name !== 'DSH Desktop') throw new Error(`应用名称不正确：${app.name}`)
+    if (process.platform === 'darwin' && Menu.getApplicationMenu()?.items[0]?.label !== 'DSH Desktop') {
+      throw new Error(`macOS 应用菜单名称不正确：${Menu.getApplicationMenu()?.items[0]?.label ?? 'missing'}`)
+    }
     if (!Menu.getApplicationMenu()?.getMenuItemById('about-dsh-desktop')) throw new Error('关于菜单不存在')
     if (!Menu.getApplicationMenu()?.getMenuItemById('check-for-updates')) throw new Error('应用更新菜单不存在')
     const item = Menu.getApplicationMenu()?.getMenuItemById('version-manager')
@@ -51,6 +54,13 @@ try {
   await manager.getByRole('button', { name: /全部版本/ }).waitFor()
   await manager.getByText('npm 官方源').waitFor()
   await manager.getByText('v0.1.0', { exact: true }).waitFor()
+  await manager.getByRole('button', { name: '在 GitHub 查看并 Star 项目' }).waitFor()
+  const languageSwitch = manager.getByRole('button', { name: '切换为英文' })
+  await languageSwitch.waitFor()
+  await languageSwitch.click()
+  await manager.getByRole('heading', { name: 'Version Manager' }).waitFor()
+  await manager.getByRole('button', { name: '切换为中文' }).click()
+  await manager.getByRole('heading', { name: '版本管理' }).waitFor()
   if (process.env.DSH_DESKTOP_E2E_SCREENSHOT) {
     await manager.getByText('0.0.1-rc.1', { exact: true }).waitFor({ timeout: 20_000 })
     await manager.screenshot({ path: process.env.DSH_DESKTOP_E2E_SCREENSHOT, fullPage: true })

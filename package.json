@@ -25,7 +25,7 @@
   "type": "module",
   "main": "out/main/index.js",
   "scripts": {
-    "dev": "electron-vite dev",
+    "dev": "node scripts/run-electron-vite.mjs dev",
     "build": "electron-vite build",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
