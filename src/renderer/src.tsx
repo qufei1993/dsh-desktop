@@ -71,6 +71,17 @@ function App(): React.JSX.Element {
   const running = snapshot.runtimeStatus === 'running' || snapshot.runtimeStatus === 'starting'
   const currentInstalled = snapshot.installedVersions.find((item) => item.version === snapshot.selectedVersion)
   const updateAvailable = Boolean(snapshot.latestVersion && snapshot.selectedVersion && semver.gt(snapshot.latestVersion, snapshot.selectedVersion))
+  const latestVersion = snapshot.latestVersion
+  const canQuickSwitch = Boolean(latestVersion && snapshot.installedVersions.some((item) => item.version === latestVersion))
+  const canQuickInstall = Boolean(latestVersion && snapshot.installedVersions.every((item) => item.version !== latestVersion))
+  const canQuickUpdate = Boolean(snapshot.latestVersion && snapshot.selectedVersion && semver.lt(snapshot.selectedVersion, snapshot.latestVersion) && (canQuickSwitch || canQuickInstall))
+  const quickUpdateKey = latestVersion ? `quick-update-${latestVersion}` : 'quick-update'
+  const quickUpdateBusyLabel = latestVersion
+    ? (snapshot.installedVersions.some((item) => item.version === latestVersion)
+      ? language.quickSwitching(latestVersion)
+      : language.quickInstalling(latestVersion))
+    : language.quickUpdateBusy
+  const quickUpdateTooltip = latestVersion ? language.quickUpdateTooltip(latestVersion) : language.quickUpdateBusy
 
   const performAppUpdate = async (): Promise<void> => {
     if (appUpdate.status === 'downloaded') {
@@ -89,10 +100,24 @@ function App(): React.JSX.Element {
     setMessage(copy(next.locale).ready)
   }
 
+  const quickUpdateHarness = async (): Promise<void> => {
+    if (!latestVersion || !snapshot.selectedVersion || !semver.lt(snapshot.selectedVersion, latestVersion)) return
+    const isLatestInstalled = snapshot.installedVersions.some((item) => item.version === latestVersion)
+    const action = isLatestInstalled
+      ? () => window.dshDesktop.select(latestVersion)
+      : () => window.dshDesktop.install(latestVersion)
+    await perform(quickUpdateKey, quickUpdateBusyLabel, action)
+  }
+
   return <main className="app-shell">
     <header className="topbar">
       <div className="brand-mark" aria-hidden="true"><img src={deepSeekWhale} alt="" /></div>
-      <div className="brand-copy"><h1>{language.versionManager}</h1><p>{language.communityClient}</p></div>
+      <div className="brand-copy">
+        <h1>
+          {language.versionManager}
+        </h1>
+        <p>{language.communityClient}</p>
+      </div>
       <button
         type="button"
         className="language-switch"
@@ -143,6 +168,18 @@ function App(): React.JSX.Element {
           {snapshot.selectedVersion && <span className="tag tag-current">{language.current}</span>}
           {currentInstalled?.source === 'bundled' && <span className="tag">{language.bundled}</span>}
           {updateAvailable && <span className="tag tag-update">{language.updateAvailable}</span>}
+          {canQuickUpdate && (
+            <button
+              type="button"
+              className="harness-update-action"
+              aria-label={language.quickUpdateAction(latestVersion ?? '')}
+              title={quickUpdateTooltip}
+              onClick={() => void quickUpdateHarness()}
+              disabled={busyAction !== null}
+            >
+              {language.quickUpdateAction(latestVersion ?? '')}
+            </button>
+          )}
         </div>
         <p>{language.officialFeaturesUnchanged}</p>
       </div>
@@ -283,6 +320,7 @@ function copy(locale: AppLocale) {
     readingState: 'Reading local state…', ready: 'Ready', completed: 'Completed', failed: 'Operation failed', appUpdateFailed: 'App update failed',
     versionManager: 'Version Manager', communityClient: 'DeepSeek Harness community desktop client', switchToEnglish: 'Switch to English', switchToChinese: '切换为中文', starOnGitHub: 'View on GitHub and star the project',
     currentDshVersion: 'Current DSH version', currentlyUsing: 'Currently using', dshNotInstalled: 'DSH is not installed', current: 'Current', bundled: 'Bundled', updateAvailable: 'Update available',
+    quickUpdateAction: (version: string) => `Update to v${version}`, quickSwitching: (version: string) => `Switching to v${version}…`, quickInstalling: (version: string) => `Installing v${version}…`, quickUpdateTooltip: (version: string) => `A new DeepSeek Harness ${version} is available. Click to install or switch.`, quickUpdateBusy: 'Checking DSH update',
     officialFeaturesUnchanged: 'Launched by DSH Desktop. Official features and data remain unchanged.', stop: 'Stop', openDsh: 'Open DSH', startDsh: 'Start DSH', stoppingDsh: 'Stopping DSH…', openingDsh: 'Opening DSH…', startingDsh: 'Starting DSH…',
     versionFilters: 'Version filters', versions: 'Versions', allVersions: 'All versions', installed: 'Installed', available: 'Available', installedVersions: 'Installed versions', availableVersions: 'Available versions',
     versionSource: 'Version source', officialNpm: 'Official npm registry', officialNpmShort: 'Official npm', onlyOfficialLine1: 'Installs and runs only', onlyOfficialLine2: 'official DSH packages',
@@ -299,6 +337,7 @@ function copy(locale: AppLocale) {
     readingState: '正在读取本机状态…', ready: '准备就绪', completed: '操作完成', failed: '操作失败', appUpdateFailed: '应用更新失败',
     versionManager: '版本管理', communityClient: 'DeepSeek Harness 社区桌面客户端', switchToEnglish: '切换为英文', switchToChinese: '切换为中文', starOnGitHub: '在 GitHub 查看并 Star 项目',
     currentDshVersion: '当前 DSH 版本', currentlyUsing: '当前使用', dshNotInstalled: '尚未安装 DSH', current: '当前', bundled: '随应用提供', updateAvailable: '可更新',
+    quickUpdateAction: (version: string) => `更新到 v${version}`, quickSwitching: (version: string) => `正在切换到 v${version}…`, quickInstalling: (version: string) => `正在安装 v${version}…`, quickUpdateTooltip: (version: string) => `发现 DeepSeek Harness ${version}，点击安装或切换。`, quickUpdateBusy: '正在检查 DSH 更新',
     officialFeaturesUnchanged: '由 DSH Desktop 启动，官方功能和数据保持原样。', stop: '停止', openDsh: '打开 DSH', startDsh: '启动 DSH', stoppingDsh: '正在停止 DSH…', openingDsh: '正在打开 DSH…', startingDsh: '正在启动 DSH…',
     versionFilters: '版本筛选', versions: '版本', allVersions: '全部版本', installed: '已安装', available: '可安装', installedVersions: '已安装版本', availableVersions: '可安装版本',
     versionSource: '版本来源', officialNpm: 'npm 官方源', officialNpmShort: '官方 npm', onlyOfficialLine1: '仅安装并运行', onlyOfficialLine2: '官方 DSH 包',

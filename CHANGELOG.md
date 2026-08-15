@@ -6,6 +6,12 @@ This file records notable changes to DSH Desktop. Versions follow [Semantic Vers
 
 ## Unreleased
 
+## [0.2.0] - 2026-08-16
+
+### Added
+
+- Detection of newer official DSH package versions, with a dismissible update notice in the official DSH window and a direct update action in Version Manager.
+
 ## [0.1.0] - 2026-08-15
 
 ### Added

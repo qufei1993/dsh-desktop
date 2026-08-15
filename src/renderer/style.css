@@ -53,6 +53,9 @@ button:focus-visible, input:focus-visible { outline: 3px solid rgba(65,118,230,.
 .tag { display: inline-flex; align-items: center; height: 20px; padding: 0 7px; border: 1px solid #e1e5ee; border-radius: 5px; color: #61666b; background: #f5f6f7; font-size: 9px; font-weight: 700; white-space: nowrap; }
 .tag-current { color: #315eaf; border-color: #c5d8ff; background: #e4edfd; }
 .tag-update, .tag-latest { color: #7b5a16; border-color: #e5d19b; background: #fbf1d5; }
+.harness-update-action { height: 23px; padding: 0 8px; border: 1px solid #a9c3f5; border-radius: 6px; color: #285ebc; background: #f4f8ff; cursor: pointer; font-size: 10px; font-weight: 750; white-space: nowrap; transition: color .15s ease, border-color .15s ease, background .15s ease, transform .15s ease; }
+.harness-update-action:hover:not(:disabled) { color: #fff; border-color: #3b77db; background: #3b77db; transform: translateY(-1px); }
+.harness-update-action:disabled { opacity: .7; cursor: wait; }
 .current-actions { position: relative; z-index: 1; display: flex; gap: 8px; margin-left: auto; padding-left: 20px; }
 .button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 36px; padding: 0 14px; border: 1px solid transparent; border-radius: 9px; cursor: pointer; font-size: 11px; font-weight: 720; transition: transform .15s ease, background .15s ease, border-color .15s ease; }
 .button svg { width: 15px; height: 15px; }

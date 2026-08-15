@@ -46,6 +46,7 @@ Install, retain, and switch official DSH versions without changing the official 
 - Cross-platform desktop client for official DeepSeek Harness on macOS and Windows.
 - Bundled Node.js 24 LTS, so users do not need to install Node.js themselves.
 - Install, keep, and switch official `@deepseek-ai/dsh` versions.
+- Detect newer official DSH versions, show a dismissible update notice in the DSH workspace, and update from Version Manager.
 - Run official `dsh web` in a dedicated, sandboxed window.
 - Bilingual UI (English / 简体中文) with manual switching.
 - Built-in release update checks and SHA-256 checksum validation.

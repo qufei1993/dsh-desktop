@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, Menu, nativeImage, net, Notification, session, shell } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain, Menu, nativeImage, net, Notification, session, shell } from 'electron'
 import electronUpdater from 'electron-updater'
 import path from 'node:path'
 import semver from 'semver'
@@ -15,14 +15,22 @@ import { VersionManager } from './version-manager'
 const APP_NAME = 'DSH Desktop'
 const RELEASE_DOWNLOAD_URL = 'https://github.com/qufei1993/dsh-desktop/releases/latest'
 const LATEST_RELEASE_API_URL = 'https://api.github.com/repos/qufei1993/dsh-desktop/releases/latest'
+const LATEST_RELEASE_API_URL_OVERRIDE = process.env.DSH_DESKTOP_TEST_RELEASE_API_URL
+const TEST_CURRENT_VERSION = process.env.DSH_DESKTOP_TEST_CURRENT_VERSION
+const TEST_ENABLE_UPDATE = process.env.DSH_DESKTOP_TEST_ENABLE_UPDATE
+const DEEPSEEK_HARNESS_WINDOW_TITLE = 'DeepSeek Harness'
 let managerWindow: BrowserWindow | null = null
 let dshWindow: BrowserWindow | null = null
+let dshUpdatePopover: BrowserWindow | null = null
+let latestSnapshotForWindowTitle: AppSnapshot | null = null
 let controller: AppController | null = null
 let desktopUpdater: DesktopUpdater | null = null
 let isQuitting = false
 let isOpeningPrimary = false
 let notifiedVersion: string | null = null
 let notifiedDesktopVersion: string | null = null
+let dismissedDshPopoverVersion: string | null = null
+let dshPopoverSignature: string | null = null
 let activeLocale: AppLocale = 'zh-CN'
 let activeLocalePreference: LocalePreference = 'system'
 
@@ -42,7 +50,7 @@ function isSafeExternalUrl(raw: string): boolean {
 }
 
 async function checkLatestManualRelease(): Promise<string | null> {
-  const response = await net.fetch(LATEST_RELEASE_API_URL, { headers: { accept: 'application/vnd.github+json' } })
+  const response = await net.fetch(LATEST_RELEASE_API_URL_OVERRIDE ?? LATEST_RELEASE_API_URL, { headers: { accept: 'application/vnd.github+json' } })
   if (!response.ok) throw new Error(`GitHub Release 查询失败：${response.status}`)
   const release = await response.json() as { tag_name?: unknown; draft?: unknown; prerelease?: unknown }
   if (release.draft === true || release.prerelease === true || typeof release.tag_name !== 'string') return null
@@ -53,6 +61,120 @@ async function checkLatestManualRelease(): Promise<string | null> {
 
 function sendToManager(channel: string, payload: AppSnapshot | AppUpdateSnapshot | InstallProgress): void {
   if (managerWindow && !managerWindow.isDestroyed()) managerWindow.webContents.send(channel, payload)
+}
+
+function dshWindowTitle(snapshot: AppSnapshot): string {
+  const copy = mainCopy(snapshot.locale)
+  if (!snapshot.selectedVersion) return DEEPSEEK_HARNESS_WINDOW_TITLE
+  const currentVersion = `v${snapshot.selectedVersion}`
+  if (snapshot.selectedVersion && snapshot.latestVersion && semver.gt(snapshot.latestVersion, snapshot.selectedVersion)) {
+    return `${DEEPSEEK_HARNESS_WINDOW_TITLE} · ${currentVersion} · ${copy.dshWindowUpdateTag(snapshot.latestVersion)}`
+  }
+  return `${DEEPSEEK_HARNESS_WINDOW_TITLE} · ${currentVersion}`
+}
+
+function setDshWindowTitle(snapshot: AppSnapshot): void {
+  if (!dshWindow || dshWindow.isDestroyed()) return
+  dshWindow.setTitle(dshWindowTitle(snapshot))
+}
+
+function hasDshUpdate(snapshot: AppSnapshot): snapshot is AppSnapshot & { latestVersion: string } {
+  return !!(snapshot.selectedVersion && snapshot.latestVersion && semver.gt(snapshot.latestVersion, snapshot.selectedVersion))
+}
+
+function updateMenuDshUpdateHint(snapshot: AppSnapshot): void {
+  const menu = Menu.getApplicationMenu()
+  if (!menu) return
+  const item = menu.getMenuItemById('quick-update-dsh')
+  if (!item) return
+  if (!hasDshUpdate(snapshot)) {
+    const copy = mainCopy(snapshot.locale)
+    item.enabled = false
+    item.label = copy.versionManager
+    return
+  }
+  const copy = mainCopy(snapshot.locale)
+  item.enabled = true
+  item.label = copy.openDshUpdateManager(snapshot.latestVersion)
+}
+
+function escapePopoverHtml(value: string): string {
+  return value.replace(/[&<>"']/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character] ?? character)
+}
+
+function positionDshUpdatePopover(): void {
+  if (!dshWindow || dshWindow.isDestroyed() || !dshUpdatePopover || dshUpdatePopover.isDestroyed()) return
+  const parent = dshWindow.getBounds()
+  const [width, height] = dshUpdatePopover.getSize()
+  dshUpdatePopover.setPosition(parent.x + parent.width - width - 18, parent.y + 72)
+}
+
+function hideDshUpdatePopover(): void {
+  if (dshUpdatePopover && !dshUpdatePopover.isDestroyed()) dshUpdatePopover.hide()
+}
+
+function showDshUpdatePopover(snapshot: AppSnapshot): void {
+  if (!dshWindow || dshWindow.isDestroyed() || !hasDshUpdate(snapshot) || dismissedDshPopoverVersion === snapshot.latestVersion) {
+    hideDshUpdatePopover()
+    return
+  }
+  const signature = `${snapshot.locale}:${snapshot.latestVersion}:${snapshot.selectedVersion}`
+  if (dshUpdatePopover && !dshUpdatePopover.isDestroyed() && dshPopoverSignature === signature) {
+    positionDshUpdatePopover()
+    dshUpdatePopover.showInactive()
+    return
+  }
+  if (dshUpdatePopover && !dshUpdatePopover.isDestroyed()) dshUpdatePopover.close()
+  const copy = mainCopy(snapshot.locale)
+  const title = escapePopoverHtml(copy.dshWindowUpdateTag(snapshot.latestVersion))
+  const action = escapePopoverHtml(copy.dshPopoverUpdateAction)
+  const window = new BrowserWindow({
+    parent: dshWindow,
+    width: 282,
+    height: 76,
+    show: false,
+    frame: false,
+    resizable: false,
+    movable: false,
+    minimizable: false,
+    maximizable: false,
+    fullscreenable: false,
+    skipTaskbar: true,
+    transparent: true,
+    hasShadow: false,
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+      sandbox: true
+    }
+  })
+  dshUpdatePopover = window
+  dshPopoverSignature = signature
+  window.on('closed', () => {
+    if (dshUpdatePopover === window) {
+      dshUpdatePopover = null
+      dshPopoverSignature = null
+    }
+  })
+  window.webContents.on('will-navigate', (event, rawUrl) => {
+    let actionName = ''
+    try { actionName = new URL(rawUrl).hostname } catch { return }
+    if (!['open-update', 'dismiss-update'].includes(actionName)) return
+    event.preventDefault()
+    if (actionName === 'dismiss-update') {
+      dismissedDshPopoverVersion = snapshot.latestVersion
+      hideDshUpdatePopover()
+      return
+    }
+    hideDshUpdatePopover()
+    showManagerWindow()
+  })
+  window.once('ready-to-show', () => {
+    positionDshUpdatePopover()
+    window.showInactive()
+  })
+  const html = `<!doctype html><html lang="${snapshot.locale === 'zh-CN' ? 'zh-CN' : 'en'}"><head><meta charset="utf-8"><style>html,body{margin:0;background:transparent;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}body{padding:8px}.card{box-sizing:border-box;height:60px;border:1px solid #d9dde3;border-radius:10px;background:#fff;box-shadow:0 6px 18px rgba(20,28,38,.12);color:#20242b;padding:0 43px 0 14px;display:flex;align-items:center;gap:10px;position:relative}.dot{width:7px;height:7px;flex:0 0 auto;border-radius:50%;background:#3b82f6}.title{font-size:13px;font-weight:600;line-height:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.action{flex:0 0 auto;border-radius:6px;background:#2563eb;color:#fff;padding:5px 9px;font-size:12px;font-weight:650;line-height:16px;text-decoration:none}.action:hover{background:#1d4ed8}.close{position:absolute;right:10px;top:18px;width:18px;height:18px;border-radius:5px;color:#8b949e;text-align:center;line-height:16px;font-size:18px;text-decoration:none}.close:hover{background:#f1f3f5;color:#30363d}</style></head><body><div class="card"><span class="dot"></span><div class="title">${title}</div><a class="action" href="dsh-update://open-update">${action}</a><a class="close" href="dsh-update://dismiss-update" aria-label="Close">×</a></div></body></html>`
+  void window.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`)
 }
 
 function createManagerWindow(): BrowserWindow {
@@ -111,6 +233,12 @@ function installApplicationMenu(): void {
     enabled: controller !== null,
     click: showManagerWindow
   }
+  const quickUpdateInDsh: Electron.MenuItemConstructorOptions = {
+    id: 'quick-update-dsh',
+    label: copy.versionManager,
+    enabled: false,
+    click: showManagerWindow
+  }
   const about: Electron.MenuItemConstructorOptions = {
     id: 'about-dsh-desktop',
     label: copy.about,
@@ -125,8 +253,8 @@ function installApplicationMenu(): void {
   const template: Electron.MenuItemConstructorOptions[] = [
     ...(process.platform === 'darwin' ? [{
       label: APP_NAME,
-      submenu: [about, { type: 'separator' as const }, openVersions, checkUpdates, languageMenu(copy), { type: 'separator' as const }, { role: 'hide' as const, label: copy.hide }, { role: 'hideOthers' as const, label: copy.hideOthers }, { type: 'separator' as const }, { role: 'quit' as const, label: copy.quit }]
-    }] : [{ label: 'DSH Desktop', submenu: [about, { type: 'separator' as const }, openVersions, checkUpdates, languageMenu(copy), { type: 'separator' as const }, { role: 'quit' as const, label: copy.quit }] }]),
+      submenu: [about, { type: 'separator' as const }, quickUpdateInDsh, openVersions, checkUpdates, languageMenu(copy), { type: 'separator' as const }, { role: 'hide' as const, label: copy.hide }, { role: 'hideOthers' as const, label: copy.hideOthers }, { type: 'separator' as const }, { role: 'quit' as const, label: copy.quit }]
+    }] : [{ label: 'DSH Desktop', submenu: [about, { type: 'separator' as const }, quickUpdateInDsh, openVersions, checkUpdates, languageMenu(copy), { type: 'separator' as const }, { role: 'quit' as const, label: copy.quit }] }]),
     { label: copy.edit, submenu: [{ role: 'undo', label: copy.undo }, { role: 'redo', label: copy.redo }, { type: 'separator' }, { role: 'cut', label: copy.cut }, { role: 'copy', label: copy.copy }, { role: 'paste', label: copy.paste }, { role: 'selectAll', label: copy.selectAll }] },
     { label: copy.window, submenu: [{ role: 'minimize', label: copy.minimize }, { role: 'zoom', label: copy.zoom }] }
   ]
@@ -155,17 +283,32 @@ function updateAboutPanel(): void {
   })
 }
 
-function notifyDesktopUpdate(snapshot: AppUpdateSnapshot): void {
+async function notifyDesktopUpdate(snapshot: AppUpdateSnapshot): Promise<void> {
   if (snapshot.status !== 'available' || !snapshot.availableVersion || notifiedDesktopVersion === snapshot.availableVersion) return
   notifiedDesktopVersion = snapshot.availableVersion
-  if (!Notification.isSupported()) return
   const copy = mainCopy(activeLocale)
-  const notification = new Notification({
+  const confirm = await dialog.showMessageBox({
+    type: 'info',
     title: copy.desktopUpdateTitle(snapshot.availableVersion),
-    body: copy.desktopUpdateBody
+    message: snapshot.delivery === 'manual'
+      ? copy.desktopUpdatePromptManual(snapshot.availableVersion)
+      : copy.desktopUpdatePromptAuto(snapshot.availableVersion),
+    detail: copy.desktopUpdateBody,
+    buttons: [copy.promptUpdateNow, copy.promptUpdateLater],
+    defaultId: 0,
+    cancelId: 1,
+    noLink: true
   })
-  notification.on('click', showManagerWindow)
-  notification.show()
+  if (confirm.response !== 0) return
+  if (snapshot.delivery === 'manual') {
+    await shell.openExternal(RELEASE_DOWNLOAD_URL)
+    return
+  }
+  if (!desktopUpdater) return
+  const downloaded = await desktopUpdater.download()
+  if (downloaded.status !== 'downloaded') return
+  if (controller?.isRuntimeActive()) await controller.stop()
+  desktopUpdater.install()
 }
 
 function notifyDshUpdate(snapshot: AppSnapshot): void {
@@ -197,7 +340,7 @@ async function openDshWindow(rawUrl: string): Promise<void> {
     height: 840,
     minWidth: 800,
     minHeight: 600,
-    title: 'DeepSeek Harness',
+    title: latestSnapshotForWindowTitle ? dshWindowTitle(latestSnapshotForWindowTitle) : DEEPSEEK_HARNESS_WINDOW_TITLE,
     backgroundColor: '#ffffff',
     webPreferences: {
       nodeIntegration: false,
@@ -220,11 +363,36 @@ async function openDshWindow(rawUrl: string): Promise<void> {
     if (isSafeExternalUrl(url)) void shell.openExternal(url)
     return { action: 'deny' }
   })
+  window.webContents.on('did-finish-load', () => {
+    if (latestSnapshotForWindowTitle) setDshWindowTitle(latestSnapshotForWindowTitle)
+    if (process.env.DSH_OPEN_DEVTOOLS === '1') {
+      window.webContents.openDevTools({ mode: 'right' })
+    }
+  })
+  window.webContents.on('page-title-updated', (event) => {
+    event.preventDefault()
+    if (latestSnapshotForWindowTitle) setDshWindowTitle(latestSnapshotForWindowTitle)
+    else window.setTitle(DEEPSEEK_HARNESS_WINDOW_TITLE)
+  })
+  window.on('focus', () => {
+    if (latestSnapshotForWindowTitle) setDshWindowTitle(latestSnapshotForWindowTitle)
+  })
+  window.on('move', positionDshUpdatePopover)
+  window.on('resize', positionDshUpdatePopover)
+  window.on('minimize', hideDshUpdatePopover)
+  window.on('restore', () => {
+    if (latestSnapshotForWindowTitle) showDshUpdatePopover(latestSnapshotForWindowTitle)
+  })
   window.on('closed', () => {
+    if (dshUpdatePopover && !dshUpdatePopover.isDestroyed()) dshUpdatePopover.close()
     dshWindow = null
     if (controller?.isRuntimeActive()) void controller.stop()
   })
   await window.loadURL(rawUrl)
+  if (latestSnapshotForWindowTitle) {
+    setDshWindowTitle(latestSnapshotForWindowTitle)
+    showDshUpdatePopover(latestSnapshotForWindowTitle)
+  }
 }
 
 async function openPrimaryWindow(): Promise<void> {
@@ -324,27 +492,33 @@ app.whenReady().then(async () => {
   const store = new StateStore(app.getPath('userData'))
   const versions = new VersionManager(app.getPath('userData'), path.join(resourcesRoot, 'dsh'), runtime, proxy.url)
   const supervisor = new DshSupervisor(runtime.node)
-  controller = new AppController(app.getVersion(), store, new DshRegistry(net.fetch as typeof fetch), versions, supervisor, runtime, normalizeSystemLocale(app.getLocale()))
+  const currentAppVersion = TEST_CURRENT_VERSION && semver.valid(TEST_CURRENT_VERSION) ? TEST_CURRENT_VERSION : app.getVersion()
+  const updateSupported = app.isPackaged || TEST_ENABLE_UPDATE === '1'
+  controller = new AppController(currentAppVersion, store, new DshRegistry(net.fetch as typeof fetch), versions, supervisor, runtime, normalizeSystemLocale(app.getLocale()))
   desktopUpdater = new DesktopUpdater(
     electronUpdater.autoUpdater,
-    app.getVersion(),
-    app.isPackaged,
+    currentAppVersion,
+    updateSupported,
     process.platform === 'darwin' ? 'manual' : 'automatic',
     async () => { await shell.openExternal(RELEASE_DOWNLOAD_URL) },
     process.platform === 'darwin' ? checkLatestManualRelease : undefined
   )
   desktopUpdater.on('changed', (snapshot: AppUpdateSnapshot) => {
     sendToManager(channels.appUpdateChanged, snapshot)
-    notifyDesktopUpdate(snapshot)
+    if (snapshot.status === 'available') void notifyDesktopUpdate(snapshot)
   })
   controller.on('snapshot', (snapshot: AppSnapshot) => {
+    latestSnapshotForWindowTitle = snapshot
     if (snapshot.locale !== activeLocale || snapshot.localePreference !== activeLocalePreference) {
       activeLocale = snapshot.locale
       activeLocalePreference = snapshot.localePreference
       installApplicationMenu()
       updateAboutPanel()
     }
+    setDshWindowTitle(snapshot)
+    showDshUpdatePopover(snapshot)
     sendToManager(channels.stateChanged, snapshot)
+    updateMenuDshUpdateHint(snapshot)
     if (['idle', 'failed'].includes(snapshot.runtimeStatus) && dshWindow && !dshWindow.isDestroyed()) dshWindow.close()
   })
   controller.on('progress', (progress: InstallProgress) => sendToManager(channels.installProgress, progress))
@@ -354,8 +528,10 @@ app.whenReady().then(async () => {
   activeLocalePreference = initialSnapshot.localePreference
   installApplicationMenu()
   updateAboutPanel()
+  const refreshed = await controller.refresh()
+  latestSnapshotForWindowTitle = refreshed
+  notifyDshUpdate(refreshed)
   await openPrimaryWindow()
-  void controller.refresh().then(notifyDshUpdate)
   setTimeout(() => { void desktopUpdater?.check() }, 4_000)
 
   app.on('activate', () => {
@@ -390,9 +566,16 @@ function mainCopy(locale: AppLocale) {
     version: (version: string) => `Version ${version}`,
     credits: 'DeepSeek Harness community desktop client',
     desktopUpdateTitle: (version: string) => `DSH Desktop ${version} is available`,
-    desktopUpdateBody: 'Click to view. You decide whether to download and install it.',
+    desktopUpdateBody: 'A new version is available.',
+    desktopUpdatePromptAuto: (version: string) => `Version ${version} is available. Update now to download and install automatically?`,
+    desktopUpdatePromptManual: (version: string) => `Version ${version} is available. Open GitHub Releases to download it manually.`,
+    promptUpdateNow: 'Update now',
+    promptUpdateLater: 'Later',
     dshUpdateTitle: (version: string) => `DSH ${version} is available`,
-    dshUpdateBody: (version: string) => `You are still using ${version}. Click to open Version Manager.`
+    dshUpdateBody: (version: string) => `You are still using ${version}. Click to open Version Manager.`,
+    dshWindowUpdateTag: (version: string) => `Update Available: v${version}`,
+    openDshUpdateManager: (version: string) => `Update to v${version}`,
+    dshPopoverUpdateAction: 'Update'
   }
   return {
     versionManager: '版本管理…', about: '关于 DSH Desktop', checkUpdates: '检查 DSH Desktop 更新…',
@@ -401,8 +584,15 @@ function mainCopy(locale: AppLocale) {
     version: (version: string) => `版本 ${version}`,
     credits: 'DeepSeek Harness 社区桌面客户端',
     desktopUpdateTitle: (version: string) => `DSH Desktop ${version} 可以更新`,
-    desktopUpdateBody: '点击查看，是否下载和安装由你决定。',
+    desktopUpdateBody: '已检测到新版本。',
+    desktopUpdatePromptAuto: (version: string) => `发现新版本 ${version}，是否立即下载并安装？`,
+    desktopUpdatePromptManual: (version: string) => `发现新版本 ${version}，点击前往 GitHub Releases 手动下载。`,
+    promptUpdateNow: '立即更新',
+    promptUpdateLater: '稍后',
     dshUpdateTitle: (version: string) => `DSH ${version} 可以安装`,
-    dshUpdateBody: (version: string) => `当前继续使用 ${version}。点击打开版本管理。`
+    dshUpdateBody: (version: string) => `当前继续使用 ${version}。点击打开版本管理。`,
+    dshWindowUpdateTag: (version: string) => `发现更新: v${version}`,
+    openDshUpdateManager: (version: string) => `更新到 v${version}`,
+    dshPopoverUpdateAction: '更新'
   }
 }

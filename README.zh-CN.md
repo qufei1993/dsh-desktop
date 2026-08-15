@@ -46,6 +46,7 @@ DSH Desktop 启动后会直接在独立桌面窗口中显示官方 DSH 界面。
 - 社区维护的 DeepSeek Harness 桌面客户端，支持 macOS 与 Windows。
 - 应用内置 Node.js 24 LTS，用户无需自行安装 Node.js。
 - 安装、保留并切换官方 `@deepseek-ai/dsh` 历史版本。
+- 检测更新的官方 DSH 版本，在 DSH 工作区显示可关闭的更新提醒，并可从版本管理页更新。
 - 在独立窗口中运行官方 `dsh web`，不改动官方界面。
 - 简体中文 / English 双语界面，支持手动切换。
 - 自带更新检查并校验 SHA-256。
