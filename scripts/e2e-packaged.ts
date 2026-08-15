@@ -27,11 +27,24 @@ const isolatedHome = await mkdtemp(path.join(os.tmpdir(), 'dsh-desktop-e2e-'))
 const electronApp = await electron.launch({
   executablePath,
   args: [`--user-data-dir=${path.join(isolatedHome, 'electron')}`],
-  env: { ...process.env, DSH_HOME: path.join(isolatedHome, 'official-dsh') }
+  env: { ...process.env, DSH_HOME: path.join(isolatedHome, 'official-dsh'), ELECTRON_ENABLE_LOGGING: '1' }
 })
+const applicationProcess = electronApp.process()
+let applicationOutput = ''
+const collectOutput = (chunk: Buffer | string): void => {
+  applicationOutput = `${applicationOutput}${chunk.toString()}`.slice(-8_000)
+}
+applicationProcess.stdout?.on('data', collectOutput)
+applicationProcess.stderr?.on('data', collectOutput)
 
 try {
-  const dshWindow = await electronApp.firstWindow({ timeout: 45_000 })
+  let dshWindow
+  try {
+    dshWindow = await electronApp.firstWindow({ timeout: 45_000 })
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error)
+    throw new Error(`打包应用未能打开窗口（退出码 ${applicationProcess.exitCode ?? 'unknown'}）：${reason}\n${applicationOutput}`)
+  }
   await dshWindow.waitForLoadState('domcontentloaded')
   const hasOfficialBootstrap = await dshWindow.evaluate(() => '__DSH_BOOT__' in window)
   if (!hasOfficialBootstrap) throw new Error('DSH 窗口缺少官方启动标记')
