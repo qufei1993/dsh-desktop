@@ -87,9 +87,10 @@ jobs:
             release/*.exe
             release/latest.yml
           if-no-files-found: error
-      - name: Upload build artifacts (fallback)
+      - name: Upload build artifacts (retry)
         if: failure() && steps.upload-artifacts-v4.outcome == 'failure'
-        uses: actions/upload-artifact@v3
+        id: upload-artifacts-v4-retry
+        uses: actions/upload-artifact@v4
         with:
           name: dsh-desktop-${{ matrix.artifact }}
           path: |
