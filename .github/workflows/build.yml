@@ -77,7 +77,19 @@ jobs:
         if: runner.os == 'Windows'
         run: npm run ${{ matrix.command }}
       - run: npm run test:packaged
-      - uses: actions/upload-artifact@v4
+      - name: Upload build artifacts (primary)
+        id: upload-artifacts-v4
+        uses: actions/upload-artifact@v4
+        with:
+          name: dsh-desktop-${{ matrix.artifact }}
+          path: |
+            release/*.dmg
+            release/*.exe
+            release/latest.yml
+          if-no-files-found: error
+      - name: Upload build artifacts (fallback)
+        if: failure() && steps.upload-artifacts-v4.outcome == 'failure'
+        uses: actions/upload-artifact@v3
         with:
           name: dsh-desktop-${{ matrix.artifact }}
           path: |
