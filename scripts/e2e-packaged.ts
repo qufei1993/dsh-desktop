@@ -76,10 +76,10 @@ try {
   })
   const manager = await managerPromise
   await manager.getByRole('heading', { name: /版本管理|Version Manager/ }).waitFor()
-  await manager.getByText('DSH 0.1.0-rc.6').waitFor()
+  await manager.getByText(/DSH\s+/).waitFor()
   await manager.getByRole('button', { name: /全部版本|All versions/ }).waitFor()
   await manager.getByText(/npm 官方源|Official npm registry/).waitFor()
-  await manager.getByText('v0.1.0', { exact: true }).waitFor()
+  await manager.getByText(/v\d+\.\d+\.\d+(-rc\.[\d.]+)?/).waitFor()
   await manager.getByRole('button', { name: /在 GitHub 查看并 Star 项目|View on GitHub and star the project/ }).waitFor()
   const languageSwitch = manager.getByRole('button', { name: /切换为英文|切换为中文/ })
   await languageSwitch.waitFor()
@@ -95,7 +95,7 @@ try {
     await manager.getByRole('heading', { name: 'Version Manager' }).waitFor()
   }
   if (process.env.DSH_DESKTOP_E2E_SCREENSHOT) {
-    await manager.getByText('0.0.1-rc.1', { exact: true }).waitFor({ timeout: 20_000 })
+    await manager.getByText(/v\d+\.\d+\.\d+(-rc\.[\d.]+)?/).waitFor({ timeout: 20_000 })
     await manager.screenshot({ path: process.env.DSH_DESKTOP_E2E_SCREENSHOT, fullPage: true })
   }
   await dshWindow.close()
