@@ -16,7 +16,12 @@ afterEach(async () => { if (directory) await rm(directory, { recursive: true, fo
 describe('AppController', () => {
   it('提示并安装新版本但保持当前选择，用户确认后才切换', async () => {
     directory = await mkdtemp(path.join(os.tmpdir(), 'dsh-controller-'))
-    const runtime = { node: process.execPath, npmCli: path.join(root, 'tests/fixtures/fake-npm.mjs') }
+    const runtime = {
+      node: process.execPath,
+      npmCli: path.join(root, 'tests/fixtures/fake-npm.mjs'),
+      pnpmCli: path.join(root, 'node_modules/pnpm/bin/pnpm.mjs'),
+      commandDir: path.dirname(process.execPath)
+    }
     const versions = new VersionManager(directory, path.join(directory, 'bundled'), runtime)
     await versions.install('1.0.0', ['1.0.0'], () => undefined)
     const fetcher = async () => new Response(JSON.stringify({

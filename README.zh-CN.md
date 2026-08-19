@@ -7,7 +7,7 @@
   <p align="center"><a href="https://github.com/qufei1993/dsh-desktop/actions/workflows/build.yml"><img src="https://github.com/qufei1993/dsh-desktop/actions/workflows/build.yml/badge.svg" alt="构建状态" height="20"></a>&nbsp;&nbsp;<a href="https://github.com/qufei1993/dsh-desktop/releases/latest"><img src="https://img.shields.io/github/v/release/qufei1993/dsh-desktop?display_name=tag" alt="最新版本" height="20"></a>&nbsp;&nbsp;<a href="LICENSE"><img src="https://img.shields.io/github/license/qufei1993/dsh-desktop" alt="许可证" height="20"></a></p>
 </div>
 
-DSH Desktop 是由社区维护、面向 macOS 和 Windows 的 DeepSeek Harness 桌面客户端。应用自带 Node.js 24 LTS，可安装、保留和切换官方 `@deepseek-ai/dsh` 版本，并在独立窗口中运行官方 `dsh web` 页面。
+DSH Desktop 是由社区维护、面向 macOS 和 Windows 的 DeepSeek Harness 桌面客户端。应用自带 Node.js 24 LTS 与锁定版本的 pnpm，可安装、保留和切换官方 `@deepseek-ai/dsh` 版本，并在独立窗口中运行官方 `dsh web` 页面。
 
 > [!IMPORTANT]
 > 本项目由社区独立维护，与 DeepSeek 官方无隶属关系。DSH Desktop 不修改 DeepSeek Harness；官方 DSH 仍按其自身许可证和行为运行。
@@ -44,7 +44,7 @@ DSH Desktop 启动后会直接在独立桌面窗口中显示官方 DSH 界面。
 ## 核心能力
 
 - 社区维护的 DeepSeek Harness 桌面客户端，支持 macOS 与 Windows。
-- 应用内置 Node.js 24 LTS，用户无需自行安装 Node.js。
+- 应用内置 Node.js 24 LTS 与 pnpm，用户无需自行安装这两个工具。
 - 安装、保留并切换官方 `@deepseek-ai/dsh` 历史版本。
 - 检测更新的官方 DSH 版本，在 DSH 工作区显示可关闭的更新提醒，并可从版本管理页更新。
 - 在独立窗口中运行官方 `dsh web`，不改动官方界面。
@@ -92,7 +92,7 @@ npm run prepare:runtime
 npm run dev
 ```
 
-`prepare:runtime` 会下载并校验锁定的 Node.js 24 LTS，再使用该运行时安装随包 DSH。生成内容位于被 Git 忽略的 `build-resources/`。
+`prepare:runtime` 会下载并校验锁定的 Node.js 24 LTS、复制锁定版本的 pnpm，再使用该运行时安装随包 DSH。生成内容位于被 Git 忽略的 `build-resources/`。
 
 提交改动前运行：
 

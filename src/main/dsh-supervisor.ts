@@ -1,6 +1,7 @@
 import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process'
 import { EventEmitter } from 'node:events'
 import os from 'node:os'
+import path from 'node:path'
 import type { RuntimeStatus } from '../shared/contracts'
 import type { ResolvedDsh } from './version-manager'
 
@@ -17,12 +18,31 @@ export function parseLoopbackUrl(output: string): string | null {
   return null
 }
 
+export function prependRuntimePath(environment: NodeJS.ProcessEnv, entries: string[], platform = process.platform): NodeJS.ProcessEnv {
+  const result = { ...environment }
+  const pathKeys = Object.keys(result).filter((key) => key.toLowerCase() === 'path')
+  const pathKey = pathKeys[0] ?? 'PATH'
+  const separator = platform === 'win32' ? ';' : path.delimiter
+  const normalize = (value: string): string => platform === 'win32' ? value.toLowerCase() : value
+  const seen = new Set<string>()
+  const values = [...entries, ...(result[pathKey]?.split(separator) ?? [])].filter((value) => {
+    if (!value) return false
+    const normalized = normalize(value)
+    if (seen.has(normalized)) return false
+    seen.add(normalized)
+    return true
+  })
+  for (const duplicate of pathKeys.slice(1)) delete result[duplicate]
+  result[pathKey] = values.join(separator)
+  return result
+}
+
 export class DshSupervisor extends EventEmitter {
   status: RuntimeStatus = 'idle'
   url: string | null = null
   private child: ChildProcessWithoutNullStreams | null = null
 
-  constructor(private readonly nodePath: string) {
+  constructor(private readonly nodePath: string, private readonly runtimePathEntries: string[] = []) {
     super()
   }
 
@@ -33,7 +53,7 @@ export class DshSupervisor extends EventEmitter {
     return await new Promise<string>((resolve, reject) => {
       const child = spawn(this.nodePath, [dsh.entry, 'web', '--port', '0'], {
         cwd: os.homedir(),
-        env: process.env,
+        env: prependRuntimePath(process.env, this.runtimePathEntries),
         shell: false,
         windowsHide: true,
         stdio: ['pipe', 'pipe', 'pipe']

@@ -1,13 +1,17 @@
 import { createHash } from 'node:crypto'
 import { spawn } from 'node:child_process'
 import { existsSync } from 'node:fs'
-import { mkdir, readFile, readdir, rename, rm, writeFile } from 'node:fs/promises'
+import { chmod, cp, mkdir, readFile, readdir, rename, rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { pruneBundledResources, type ReleaseArch, type ReleasePlatform } from './prune-bundled-resources.js'
 
 const nodeVersion = '24.18.1'
 const dshVersion = '0.1.0-rc.6'
+// Keep the bundled release reproducible if a later prerelease satisfies the
+// official package's caret ranges but is only partially available on npm.
+const dshDependencyCutoff = '2026-08-14T00:00:00.000Z'
+const pnpmVersion = '11.22.0'
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 
 function argument(name: string, fallback: string): string {
@@ -94,6 +98,29 @@ async function main(): Promise<void> {
   } else {
     console.log(`Reusing verified Node.js v${nodeVersion} runtime for ${platform}-${arch}`)
   }
+
+  const installedPnpmRoot = path.join(root, 'node_modules', 'pnpm')
+  const installedPnpmManifest = JSON.parse(await readFile(path.join(installedPnpmRoot, 'package.json'), 'utf8')) as { name?: string; version?: string }
+  if (installedPnpmManifest.name !== 'pnpm' || installedPnpmManifest.version !== pnpmVersion) {
+    throw new Error(`需要 pnpm@${pnpmVersion}，请先运行 npm ci`)
+  }
+  const packageManagerRoot = path.join(resourceRoot, 'package-manager')
+  const bundledPnpmRoot = path.join(packageManagerRoot, 'pnpm')
+  await rm(packageManagerRoot, { recursive: true, force: true })
+  await mkdir(packageManagerRoot, { recursive: true })
+  await cp(installedPnpmRoot, bundledPnpmRoot, { recursive: true })
+
+  const runtimeBin = path.join(resourceRoot, 'runtime-bin')
+  await rm(runtimeBin, { recursive: true, force: true })
+  await mkdir(runtimeBin, { recursive: true })
+  if (platform === 'win32') {
+    await writeFile(path.join(runtimeBin, 'pnpm.cmd'), '@echo off\r\n"%~dp0..\\runtime\\node.exe" "%~dp0..\\package-manager\\pnpm\\bin\\pnpm.mjs" %*\r\n')
+  } else {
+    const pnpmShim = path.join(runtimeBin, 'pnpm')
+    await writeFile(pnpmShim, '#!/bin/sh\nset -eu\nresource_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)\nexec "$resource_root/runtime/bin/node" "$resource_root/package-manager/pnpm/bin/pnpm.mjs" "$@"\n')
+    await chmod(pnpmShim, 0o755)
+  }
+
   const dshRoot = path.join(resourceRoot, 'dsh', dshVersion)
   await rm(dshRoot, { recursive: true, force: true })
   await mkdir(dshRoot, { recursive: true })
@@ -101,13 +128,13 @@ async function main(): Promise<void> {
     name: 'dsh-desktop-bundled-dsh', version: '0.0.0', private: true,
     dependencies: { '@deepseek-ai/dsh': dshVersion }
   })}\n`)
-  await run(node, [npmCli, 'install', '--prefix', dshRoot, '--no-audit', '--no-fund', '--prefer-offline', '--registry=https://registry.npmjs.org/'])
+  await run(node, [npmCli, 'install', '--prefix', dshRoot, '--no-audit', '--no-fund', '--prefer-offline', `--before=${dshDependencyCutoff}`, '--registry=https://registry.npmjs.org/'])
   const manifest = JSON.parse(await readFile(path.join(dshRoot, 'node_modules', '@deepseek-ai', 'dsh', 'package.json'), 'utf8')) as { name?: string; version?: string }
   if (manifest.name !== '@deepseek-ai/dsh' || manifest.version !== dshVersion) throw new Error('预装官方 DSH 校验失败')
   const pruned = await pruneBundledResources(dshRoot, platform as ReleasePlatform, arch as ReleaseArch)
   console.log(`Pruned ${pruned.removedFiles} non-target/debug files (${(pruned.removedBytes / 1024 / 1024).toFixed(1)} MiB): ${pruned.removedPrebuilds.join(', ') || 'debug symbols only'}`)
   await rm(temporary, { recursive: true, force: true })
-  console.log(`Prepared Node.js v${nodeVersion} and @deepseek-ai/dsh@${dshVersion} for ${platform}-${arch}`)
+  console.log(`Prepared Node.js v${nodeVersion}, pnpm v${pnpmVersion}, and @deepseek-ai/dsh@${dshVersion} for ${platform}-${arch}`)
 }
 
 await main()

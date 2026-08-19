@@ -491,7 +491,7 @@ app.whenReady().then(async () => {
   const runtime = resolveRuntimePaths(resourcesRoot, app.isPackaged)
   const store = new StateStore(app.getPath('userData'))
   const versions = new VersionManager(app.getPath('userData'), path.join(resourcesRoot, 'dsh'), runtime, proxy.url)
-  const supervisor = new DshSupervisor(runtime.node)
+  const supervisor = new DshSupervisor(runtime.node, [runtime.commandDir, path.dirname(runtime.node)])
   const currentAppVersion = TEST_CURRENT_VERSION && semver.valid(TEST_CURRENT_VERSION) ? TEST_CURRENT_VERSION : app.getVersion()
   const updateSupported = app.isPackaged || TEST_ENABLE_UPDATE === '1'
   controller = new AppController(currentAppVersion, store, new DshRegistry(net.fetch as typeof fetch), versions, supervisor, runtime, normalizeSystemLocale(app.getLocale()))

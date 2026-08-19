@@ -7,7 +7,7 @@
   <p align="center"><a href="https://github.com/qufei1993/dsh-desktop/actions/workflows/build.yml"><img src="https://github.com/qufei1993/dsh-desktop/actions/workflows/build.yml/badge.svg" alt="Build" height="20"></a>&nbsp;&nbsp;<a href="https://github.com/qufei1993/dsh-desktop/releases/latest"><img src="https://img.shields.io/github/v/release/qufei1993/dsh-desktop?display_name=tag" alt="Latest release" height="20"></a>&nbsp;&nbsp;<a href="LICENSE"><img src="https://img.shields.io/github/license/qufei1993/dsh-desktop" alt="License" height="20"></a></p>
 </div>
 
-DSH Desktop is a community-maintained DeepSeek Harness desktop client for macOS and Windows. It bundles Node.js 24 LTS, installs and retains official `@deepseek-ai/dsh` versions, and runs the official `dsh web` interface in a dedicated window.
+DSH Desktop is a community-maintained DeepSeek Harness desktop client for macOS and Windows. It bundles Node.js 24 LTS and a pinned pnpm runtime, installs and retains official `@deepseek-ai/dsh` versions, and runs the official `dsh web` interface in a dedicated window.
 
 > [!IMPORTANT]
 > This project is maintained independently by the community and is not affiliated with DeepSeek. DSH Desktop does not modify DeepSeek Harness; the official DSH package continues to operate under its own license and behavior.
@@ -44,7 +44,7 @@ Install, retain, and switch official DSH versions without changing the official 
 ## Core features
 
 - Cross-platform desktop client for official DeepSeek Harness on macOS and Windows.
-- Bundled Node.js 24 LTS, so users do not need to install Node.js themselves.
+- Bundled Node.js 24 LTS and pnpm, so users do not need to install either tool themselves.
 - Install, keep, and switch official `@deepseek-ai/dsh` versions.
 - Detect newer official DSH versions, show a dismissible update notice in the DSH workspace, and update from Version Manager.
 - Run official `dsh web` in a dedicated, sandboxed window.
@@ -92,7 +92,7 @@ npm run prepare:runtime
 npm run dev
 ```
 
-`prepare:runtime` downloads and validates the pinned Node.js 24 LTS runtime, then installs the bundled DSH version with that runtime. Generated files are stored under the ignored `build-resources/` directory.
+`prepare:runtime` downloads and validates the pinned Node.js 24 LTS runtime, copies the pinned pnpm package, then installs the bundled DSH version with that runtime. Generated files are stored under the ignored `build-resources/` directory.
 
 Before submitting changes, run:
 
