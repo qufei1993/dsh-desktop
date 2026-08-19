@@ -1,7 +1,6 @@
 import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process'
 import { EventEmitter } from 'node:events'
 import os from 'node:os'
-import path from 'node:path'
 import type { RuntimeStatus } from '../shared/contracts'
 import type { ResolvedDsh } from './version-manager'
 
@@ -22,7 +21,7 @@ export function prependRuntimePath(environment: NodeJS.ProcessEnv, entries: stri
   const result = { ...environment }
   const pathKeys = Object.keys(result).filter((key) => key.toLowerCase() === 'path')
   const pathKey = pathKeys[0] ?? 'PATH'
-  const separator = platform === 'win32' ? ';' : path.delimiter
+  const separator = platform === 'win32' ? ';' : ':'
   const normalize = (value: string): string => platform === 'win32' ? value.toLowerCase() : value
   const seen = new Set<string>()
   const values = [...entries, ...(result[pathKey]?.split(separator) ?? [])].filter((value) => {
