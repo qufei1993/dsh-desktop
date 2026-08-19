@@ -1,3 +1,4 @@
+import { spawn } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { mkdtemp, readdir, rm } from 'node:fs/promises'
 import os from 'node:os'
@@ -33,9 +34,27 @@ const packagedNode = process.platform === 'win32'
 const packagedNpm = process.platform === 'win32'
   ? path.join(resourcesPath, 'runtime', 'npm', 'bin', 'npm-cli.js')
   : path.join(resourcesPath, 'runtime', 'lib', 'node_modules', 'npm', 'bin', 'npm-cli.js')
-if (!existsSync(packagedNode) || !existsSync(packagedNpm)) {
-  throw new Error(`打包应用的 Node.js 资源不完整：node=${existsSync(packagedNode)}, npm=${existsSync(packagedNpm)}`)
+const packagedPnpm = path.join(resourcesPath, 'package-manager', 'pnpm', 'bin', 'pnpm.mjs')
+const packagedRuntimeBin = path.join(resourcesPath, 'runtime-bin')
+const packagedPnpmCommand = path.join(packagedRuntimeBin, process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm')
+if (!existsSync(packagedNode) || !existsSync(packagedNpm) || !existsSync(packagedPnpm) || !existsSync(packagedPnpmCommand)) {
+  throw new Error(`打包应用的运行资源不完整：node=${existsSync(packagedNode)}, npm=${existsSync(packagedNpm)}, pnpm=${existsSync(packagedPnpm)}, pnpmCommand=${existsSync(packagedPnpmCommand)}`)
 }
+
+const pathKey = Object.keys(process.env).find((key) => key.toLowerCase() === 'path') ?? 'PATH'
+const packagedEnvironment = { ...process.env, [pathKey]: [packagedRuntimeBin, path.dirname(packagedNode), process.env[pathKey]].filter(Boolean).join(path.delimiter) }
+const packagedPnpmVersion = await new Promise<string>((resolve, reject) => {
+  const executable = process.platform === 'win32' ? 'cmd.exe' : 'pnpm'
+  const args = process.platform === 'win32' ? ['/d', '/s', '/c', 'pnpm --version'] : ['--version']
+  const command = spawn(executable, args, { env: packagedEnvironment, shell: false, windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] })
+  let stdout = ''
+  let stderr = ''
+  command.stdout.on('data', (chunk: Buffer) => { stdout += chunk.toString() })
+  command.stderr.on('data', (chunk: Buffer) => { stderr += chunk.toString() })
+  command.once('error', reject)
+  command.once('exit', (code) => code === 0 ? resolve(stdout.trim()) : reject(new Error(`打包 pnpm 退出码 ${code}: ${stderr}`)))
+})
+if (packagedPnpmVersion !== '11.22.0') throw new Error(`打包 pnpm 版本不正确：${packagedPnpmVersion}`)
 const isolatedHome = await mkdtemp(path.join(os.tmpdir(), 'dsh-desktop-e2e-'))
 const electronApp = await electron.launch({
   executablePath,
@@ -100,7 +119,7 @@ try {
   }
   await dshWindow.close()
   await manager.getByText(/未运行|Not running/, { exact: true }).waitFor({ timeout: 10_000 })
-  console.log('Packaged E2E passed: direct official DSH launch, version menu, manager UI, and stop-on-close')
+  console.log('Packaged E2E passed: bundled pnpm, direct official DSH launch, version menu, manager UI, and stop-on-close')
 } finally {
   await electronApp.close()
   await rm(isolatedHome, { recursive: true, force: true })

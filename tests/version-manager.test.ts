@@ -14,7 +14,9 @@ describe('VersionManager', () => {
     directory = await mkdtemp(path.join(os.tmpdir(), 'dsh-version-'))
     const manager = new VersionManager(directory, path.join(directory, 'bundled'), {
       node: process.execPath,
-      npmCli: path.join(root, 'tests/fixtures/fake-npm.mjs')
+      npmCli: path.join(root, 'tests/fixtures/fake-npm.mjs'),
+      pnpmCli: path.join(root, 'node_modules/pnpm/bin/pnpm.mjs'),
+      commandDir: path.join(root, 'node_modules/.bin')
     })
     await manager.install('1.2.3-rc.1', ['1.2.3-rc.1'], () => undefined)
     const resolved = await manager.resolve('1.2.3-rc.1')

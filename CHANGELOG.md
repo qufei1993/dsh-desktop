@@ -6,6 +6,12 @@ This file records notable changes to DSH Desktop. Versions follow [Semantic Vers
 
 ## Unreleased
 
+## [0.2.1] - 2026-08-19
+
+### Fixed
+
+- Bundled pnpm 11.22.0 and exposed the bundled Node.js and pnpm commands only to official DSH child processes, so plugin operations work when the desktop app starts with a minimal GUI `PATH`.
+
 ## [0.2.0] - 2026-08-16
 
 ### Added
