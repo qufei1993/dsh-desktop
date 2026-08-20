@@ -1,8 +1,15 @@
 import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process'
 import { EventEmitter } from 'node:events'
 import os from 'node:os'
+import semver from 'semver'
 import type { RuntimeStatus } from '../shared/contracts'
 import type { ResolvedDsh } from './version-manager'
+
+const noOpenMinimumVersion = '0.1.0-rc.8'
+
+export function dshWebArguments(dsh: ResolvedDsh): string[] {
+  return [dsh.entry, 'web', ...(semver.gte(dsh.version, noOpenMinimumVersion) ? ['--no-open'] : []), '--port', '0']
+}
 
 export function parseLoopbackUrl(output: string): string | null {
   const matches = output.match(/https?:\/\/[^\s'"<>]+/g) ?? []
@@ -50,7 +57,7 @@ export class DshSupervisor extends EventEmitter {
     this.setStatus('starting')
 
     return await new Promise<string>((resolve, reject) => {
-      const child = spawn(this.nodePath, [dsh.entry, 'web', '--port', '0'], {
+      const child = spawn(this.nodePath, dshWebArguments(dsh), {
         cwd: os.homedir(),
         env: prependRuntimePath(process.env, this.runtimePathEntries),
         shell: false,

@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { afterEach, describe, expect, it } from 'vitest'
-import { DshSupervisor, parseLoopbackUrl, prependRuntimePath } from '../src/main/dsh-supervisor'
+import { DshSupervisor, dshWebArguments, parseLoopbackUrl, prependRuntimePath } from '../src/main/dsh-supervisor'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 let supervisor: DshSupervisor | null = null
@@ -17,6 +17,13 @@ describe('parseLoopbackUrl', () => {
 })
 
 describe('DshSupervisor', () => {
+  it('仅对支持的 DSH 版本禁止打开系统浏览器', () => {
+    const entry = '/runtime/dsh.js'
+    expect(dshWebArguments({ version: '0.1.0-rc.6', root, entry, source: 'installed' })).toEqual([entry, 'web', '--port', '0'])
+    expect(dshWebArguments({ version: '0.1.0-rc.8', root, entry, source: 'installed' })).toEqual([entry, 'web', '--no-open', '--port', '0'])
+    expect(dshWebArguments({ version: '0.1.0', root, entry, source: 'installed' })).toEqual([entry, 'web', '--no-open', '--port', '0'])
+  })
+
   it('把应用私有命令目录放到 PATH 前面并去重', () => {
     expect(prependRuntimePath({ Path: 'C:\\Windows;C:\\Tools', PATH: 'ignored' }, ['C:\\Runtime', 'c:\\tools'], 'win32')).toEqual({
       Path: 'C:\\Runtime;c:\\tools;C:\\Windows'

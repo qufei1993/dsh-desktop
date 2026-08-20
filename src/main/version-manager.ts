@@ -93,7 +93,7 @@ export class VersionManager {
         '--prefix', prefix,
         '--no-audit',
         '--no-fund',
-        '--prefer-offline',
+        '--prefer-online',
         '--registry=https://registry.npmjs.org/',
         '--ignore-scripts=false'
       ], { env: npmProxyEnvironment(this.proxyUrl), shell: false, windowsHide: true, stdio: ['ignore', 'ignore', 'pipe'] })

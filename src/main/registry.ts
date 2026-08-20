@@ -1,8 +1,8 @@
+import semver from 'semver'
 import { exactVersionSchema, officialPackageName } from '../shared/contracts'
 
 interface RegistryDocument {
   versions?: Record<string, unknown>
-  'dist-tags'?: Record<string, string>
   time?: Record<string, string>
 }
 
@@ -19,8 +19,8 @@ export class DshRegistry {
     if (!response.ok) throw new Error(`无法查询官方 DSH 版本（HTTP ${response.status}）`)
     const data = await response.json() as RegistryDocument
     const versionNames = Object.keys(data.versions ?? {}).filter((value) => exactVersionSchema.safeParse(value).success)
-    const latest = data['dist-tags']?.latest
-    if (!latest || !versionNames.includes(latest)) throw new Error('npm registry 未返回有效的 latest 版本')
+    const latest = semver.rsort([...versionNames])[0]
+    if (!latest) throw new Error('npm registry 未返回有效版本')
     const versions = versionNames.map((version) => ({
       version,
       publishedAt: data.time?.[version] ?? null

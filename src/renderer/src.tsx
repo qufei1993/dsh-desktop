@@ -296,7 +296,7 @@ function localizeMessage(locale: AppLocale, message: string): string {
     '已有 DSH 版本正在安装': 'Another DSH version is already being installed', '安装失败': 'Installation failed',
     '请先停止正在运行的 DSH': 'Stop the running DSH instance first', '请先安装并选择一个 DSH 版本': 'Install and select a DSH version first',
     '启动失败': 'Could not start DSH', '无法查询官方 DSH 版本': 'Could not query official DSH versions',
-    'npm registry 未返回有效的 latest 版本': 'The npm registry did not return a valid latest version',
+    'npm registry 未返回有效版本': 'The npm registry did not return any valid versions',
     '该版本不在官方 npm 版本目录中': 'This version is not listed in the official npm catalog',
     '正在校验官方包版本和入口': 'Validating the official package version and entry point',
     '官方 DSH 包身份或版本校验失败': 'Official DSH package identity or version validation failed',

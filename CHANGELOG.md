@@ -6,6 +6,12 @@ This file records notable changes to DSH Desktop. Versions follow [Semantic Vers
 
 ## Unreleased
 
+### Fixed
+
+- Refreshed npm registry metadata before installing official DSH versions, preventing newly published versions from failing because of stale local metadata.
+- Determined the newest available DSH version from the highest valid package version instead of a potentially lagging npm `latest` tag.
+- Started DSH 0.1.0-rc.8 and later with `--no-open`, keeping the official web UI inside the desktop window without also opening the system browser.
+
 ## [0.2.1] - 2026-08-19
 
 ### Fixed
