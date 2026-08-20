@@ -37,14 +37,18 @@ describe('bundled pnpm compatibility', () => {
     await writeFile(path.join(directory, 'package.json'), JSON.stringify({ name: 'dsh-profile', private: true }))
     const needsBuild = pack('pnpm-needs-build', directory)
     const plainPlugin = pack('pnpm-plain-plugin', directory)
+    const runtimeEnvironment = dshRuntimeEnvironment(process.env, [])
 
-    const first = pnpm(directory, ['add', needsBuild, '--reporter=append-only'])
+    const first = pnpm(directory, ['add', needsBuild, '--reporter=append-only'], {
+      ...runtimeEnvironment,
+      pnpm_config_strict_dep_builds: 'true'
+    })
     expect(first.status, `${first.stdout}\n${first.stderr}`).toBe(1)
     expect(`${first.stdout}\n${first.stderr}`).toContain('ERR_PNPM_IGNORED_BUILDS')
     expect(`${first.stdout}\n${first.stderr}`).toContain('Ignored build scripts')
     await expect(readFile(path.join(directory, 'node_modules', 'dsh-desktop-test-needs-build', 'built.txt'), 'utf8')).rejects.toThrow()
 
-    const update = pnpm(directory, ['add', plainPlugin, '--reporter=append-only'], dshRuntimeEnvironment(process.env, []))
+    const update = pnpm(directory, ['add', plainPlugin, '--reporter=append-only'], runtimeEnvironment)
     expect(update.status, `${update.stdout}\n${update.stderr}`).toBe(0)
     await expect(readFile(path.join(directory, 'node_modules', 'dsh-desktop-test-needs-build', 'built.txt'), 'utf8')).rejects.toThrow()
   }, 30_000)
