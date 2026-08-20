@@ -1,6 +1,5 @@
 import { spawnSync } from 'node:child_process'
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
-import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { afterEach, describe, expect, it } from 'vitest'
@@ -33,7 +32,9 @@ function pack(fixture: string, destination: string): string {
 
 describe('bundled pnpm compatibility', () => {
   it('阻止未授权构建脚本时仍允许后续插件安装', async () => {
-    directory = await mkdtemp(path.join(os.tmpdir(), 'dsh-pnpm-compat-'))
+    // Windows can expose the system temp directory through both its long path and
+    // an 8.3 alias, which makes pnpm think the virtual store moved between runs.
+    directory = await mkdtemp(path.join(root, '.dsh-pnpm-compat-'))
     await writeFile(path.join(directory, 'package.json'), JSON.stringify({ name: 'dsh-profile', private: true }))
     const needsBuild = pack('pnpm-needs-build', directory)
     const plainPlugin = pack('pnpm-plain-plugin', directory)
