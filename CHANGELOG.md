@@ -16,7 +16,7 @@ This file records notable changes to DSH Desktop. Versions follow [Semantic Vers
 
 ### Fixed
 
-- Bundled pnpm 11.22.0 and exposed the bundled Node.js and pnpm commands only to official DSH child processes, so plugin operations work when the desktop app starts with a minimal GUI `PATH`.
+- Bundled pnpm 11.22.0 and exposed the bundled Node.js and pnpm commands only to official DSH child processes, so plugin operations work with a minimal GUI `PATH`. Unapproved dependency build scripts remain blocked without turning otherwise valid plugin updates into fatal `ERR_PNPM_IGNORED_BUILDS` failures.
 
 ## [0.2.0] - 2026-08-16
 

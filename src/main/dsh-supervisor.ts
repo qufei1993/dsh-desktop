@@ -43,6 +43,16 @@ export function prependRuntimePath(environment: NodeJS.ProcessEnv, entries: stri
   return result
 }
 
+export function dshRuntimeEnvironment(environment: NodeJS.ProcessEnv, entries: string[], platform = process.platform): NodeJS.ProcessEnv {
+  return {
+    ...prependRuntimePath(environment, entries, platform),
+    // pnpm 11 still blocks unapproved dependency build scripts, but this keeps
+    // that safety decision from turning an otherwise valid plugin update into
+    // ERR_PNPM_IGNORED_BUILDS. This setting is scoped to the official DSH child.
+    pnpm_config_strict_dep_builds: 'false'
+  }
+}
+
 export class DshSupervisor extends EventEmitter {
   status: RuntimeStatus = 'idle'
   url: string | null = null
@@ -59,7 +69,7 @@ export class DshSupervisor extends EventEmitter {
     return await new Promise<string>((resolve, reject) => {
       const child = spawn(this.nodePath, dshWebArguments(dsh), {
         cwd: os.homedir(),
-        env: prependRuntimePath(process.env, this.runtimePathEntries),
+        env: dshRuntimeEnvironment(process.env, this.runtimePathEntries),
         shell: false,
         windowsHide: true,
         stdio: ['pipe', 'pipe', 'pipe']

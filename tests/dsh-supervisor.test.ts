@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { afterEach, describe, expect, it } from 'vitest'
-import { DshSupervisor, dshWebArguments, parseLoopbackUrl, prependRuntimePath } from '../src/main/dsh-supervisor'
+import { DshSupervisor, dshRuntimeEnvironment, dshWebArguments, parseLoopbackUrl, prependRuntimePath } from '../src/main/dsh-supervisor'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 let supervisor: DshSupervisor | null = null
@@ -29,6 +29,13 @@ describe('DshSupervisor', () => {
       Path: 'C:\\Runtime;c:\\tools;C:\\Windows'
     })
     expect(prependRuntimePath({ PATH: '/usr/bin:/bin' }, ['/app/bin', '/usr/bin'], 'darwin').PATH).toBe('/app/bin:/usr/bin:/bin')
+  })
+
+  it('只为 DSH 子进程关闭 pnpm 的致命构建脚本检查', () => {
+    expect(dshRuntimeEnvironment({ PATH: '/usr/bin' }, ['/app/bin'], 'darwin')).toMatchObject({
+      PATH: '/app/bin:/usr/bin',
+      pnpm_config_strict_dep_builds: 'false'
+    })
   })
 
   it('启动假 CLI、进入运行状态并正常停止', async () => {
