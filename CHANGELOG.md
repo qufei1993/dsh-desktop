@@ -6,16 +6,13 @@ This file records notable changes to DSH Desktop. Versions follow [Semantic Vers
 
 ## Unreleased
 
+## [0.2.1] - 2026-08-20
+
 ### Fixed
 
 - Refreshed npm registry metadata before installing official DSH versions, preventing newly published versions from failing because of stale local metadata.
 - Determined the newest available DSH version from the highest valid package version instead of a potentially lagging npm `latest` tag.
 - Started DSH 0.1.0-rc.8 and later with `--no-open`, keeping the official web UI inside the desktop window without also opening the system browser.
-
-## [0.2.1] - 2026-08-19
-
-### Fixed
-
 - Bundled pnpm 11.22.0 and exposed the bundled Node.js and pnpm commands only to official DSH child processes, so plugin operations work with a minimal GUI `PATH`. Unapproved dependency build scripts remain blocked without turning otherwise valid plugin updates into fatal `ERR_PNPM_IGNORED_BUILDS` failures.
 
 ## [0.2.0] - 2026-08-16
