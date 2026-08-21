@@ -424,6 +424,10 @@ function registerIpc(instance: AppController): void {
     assertManager(event)
     return await instance.install(exactVersionSchema.parse(version))
   })
+  ipcMain.handle(channels.uninstall, async (event, version: unknown) => {
+    assertManager(event)
+    return await instance.uninstall(exactVersionSchema.parse(version))
+  })
   ipcMain.handle(channels.select, async (event, version: unknown) => {
     assertManager(event)
     const target = exactVersionSchema.parse(version)

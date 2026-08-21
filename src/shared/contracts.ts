@@ -64,6 +64,7 @@ export interface DesktopApi {
   getSnapshot(): Promise<AppSnapshot>
   refresh(): Promise<AppSnapshot>
   install(version: string): Promise<AppSnapshot>
+  uninstall(version: string): Promise<AppSnapshot>
   select(version: string): Promise<AppSnapshot>
   launch(): Promise<AppSnapshot>
   stop(): Promise<AppSnapshot>

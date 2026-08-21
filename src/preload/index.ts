@@ -6,6 +6,7 @@ const api: DesktopApi = {
   getSnapshot: () => ipcRenderer.invoke(channels.snapshot),
   refresh: () => ipcRenderer.invoke(channels.refresh),
   install: (version) => ipcRenderer.invoke(channels.install, version),
+  uninstall: (version) => ipcRenderer.invoke(channels.uninstall, version),
   select: (version) => ipcRenderer.invoke(channels.select, version),
   launch: () => ipcRenderer.invoke(channels.launch),
   stop: () => ipcRenderer.invoke(channels.stop),

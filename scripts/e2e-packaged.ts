@@ -1,6 +1,6 @@
 import { spawn } from 'node:child_process'
 import { existsSync } from 'node:fs'
-import { mkdtemp, readdir, rm } from 'node:fs/promises'
+import { mkdir, mkdtemp, readdir, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -56,6 +56,13 @@ const packagedPnpmVersion = await new Promise<string>((resolve, reject) => {
 })
 if (packagedPnpmVersion !== '11.22.0') throw new Error(`打包 pnpm 版本不正确：${packagedPnpmVersion}`)
 const isolatedHome = await mkdtemp(path.join(os.tmpdir(), 'dsh-desktop-e2e-'))
+const removableVersion = '0.0.1'
+const removablePackageRoot = path.join(isolatedHome, 'electron', 'dsh-versions', removableVersion, 'node_modules', '@deepseek-ai', 'dsh')
+await mkdir(removablePackageRoot, { recursive: true })
+await writeFile(path.join(removablePackageRoot, 'package.json'), JSON.stringify({
+  name: '@deepseek-ai/dsh', version: removableVersion, bin: { dsh: 'cli.js' }
+}))
+await writeFile(path.join(removablePackageRoot, 'cli.js'), 'throw new Error("E2E removable version must not launch")\n')
 const electronApp = await electron.launch({
   executablePath,
   args: [`--user-data-dir=${path.join(isolatedHome, 'electron')}`],
@@ -97,6 +104,12 @@ try {
   await manager.getByRole('heading', { name: /版本管理|Version Manager/ }).waitFor()
   await manager.getByRole('heading', { name: /^DSH\s+\d+\.\d+\.\d+/ }).waitFor()
   await manager.getByRole('button', { name: /全部版本|All versions/ }).waitFor()
+  await manager.getByText(removableVersion, { exact: true }).waitFor()
+  const uninstallButton = manager.getByRole('button', { name: /卸载|Uninstall/ })
+  await uninstallButton.waitFor()
+  await uninstallButton.click()
+  await manager.getByText(removableVersion, { exact: true }).waitFor({ state: 'detached' })
+  if (existsSync(path.join(isolatedHome, 'electron', 'dsh-versions', removableVersion))) throw new Error('卸载后版本目录仍然存在')
   await manager.getByText(/npm 官方源|Official npm registry/).waitFor()
   await manager.getByRole('heading', { name: /^DSH\s+\d+\.\d+\.\d+/ }).waitFor()
   await manager.getByRole('button', { name: /在 GitHub 查看并 Star 项目|View on GitHub and star the project/ }).waitFor()
@@ -119,7 +132,7 @@ try {
   }
   await dshWindow.close()
   await manager.getByText(/未运行|Not running/, { exact: true }).waitFor({ timeout: 10_000 })
-  console.log('Packaged E2E passed: bundled pnpm, direct official DSH launch, version menu, manager UI, and stop-on-close')
+  console.log('Packaged E2E passed: bundled pnpm, direct official DSH launch, version removal, manager UI, and stop-on-close')
 } finally {
   await electronApp.close()
   await rm(isolatedHome, { recursive: true, force: true })

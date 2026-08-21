@@ -6,6 +6,16 @@ This file records notable changes to DSH Desktop. Versions follow [Semantic Vers
 
 ## Unreleased
 
+## [0.2.2] - 2026-08-21
+
+### Added
+
+- Added one-click removal of user-installed DSH versions from Version Manager. The bundled version and the currently selected version remain protected from removal, and removed versions remain available for reinstallation.
+
+### Fixed
+
+- Restricted DSH version installation to the official subprocess helper's lightweight permission script. Native dependencies now use their bundled platform prebuilds instead of attempting local `node-gyp` or CMake builds, so installing newly published DSH versions no longer requires developer toolchains.
+
 ## [0.2.1] - 2026-08-21
 
 ### Fixed

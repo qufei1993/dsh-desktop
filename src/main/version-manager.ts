@@ -12,6 +12,14 @@ interface PackageManifest {
   bin?: string | Record<string, string>
 }
 
+const pnpmBuildPolicy = `allowBuilds:
+  '@deepseek-ai/dsh-subprocess-local': true
+  '@google/genai': false
+  koffi: false
+  node-pty: false
+  protobufjs: false
+`
+
 export interface ResolvedDsh {
   version: string
   root: string
@@ -79,10 +87,13 @@ export class VersionManager {
     const staging = path.join(this.versionsDir, `.install-${version}-${Date.now()}`)
     await mkdir(staging, { recursive: true })
     try {
-      await writeFile(path.join(staging, 'package.json'), `${JSON.stringify({
-        name: 'dsh-desktop-managed-version', version: '0.0.0', private: true,
-        dependencies: { [officialPackageName]: version }
-      })}\n`)
+      await Promise.all([
+        writeFile(path.join(staging, 'package.json'), `${JSON.stringify({
+          name: 'dsh-desktop-managed-version', version: '0.0.0', private: true,
+          dependencies: { [officialPackageName]: version }
+        })}\n`),
+        writeFile(path.join(staging, 'pnpm-workspace.yaml'), pnpmBuildPolicy)
+      ])
       progress({ version, phase: 'downloading', message: `正在安装官方 DSH ${version}` })
       await this.runPnpmInstall(staging, version, progress)
       progress({ version, phase: 'validating', message: '正在校验官方包版本和入口' })
@@ -94,6 +105,14 @@ export class VersionManager {
       progress({ version, phase: 'failed', message: error instanceof Error ? error.message : '安装失败' })
       throw error
     }
+  }
+
+  async uninstall(version: string): Promise<void> {
+    exactVersionSchema.parse(version)
+    const destination = path.join(this.versionsDir, version)
+    if (!existsSync(destination)) throw new Error('该版本不是用户安装的 DSH 版本')
+    await this.resolveAt(destination, version, 'installed')
+    await rm(destination, { recursive: true, force: true })
   }
 
   private async runPnpmInstall(prefix: string, version: string, progress: (value: InstallProgress) => void): Promise<void> {
@@ -109,10 +128,10 @@ export class VersionManager {
         env: {
           ...npmProxyEnvironment(this.proxyUrl),
           CI: '1',
-          // Match npm's previous lifecycle-script behavior for the official package tree.
-          pnpm_config_dangerously_allow_all_builds: 'true',
           pnpm_config_minimum_release_age: '0',
-          pnpm_config_strict_dep_builds: 'true'
+          // Only the official helper permission fix is allowlisted in pnpm-workspace.yaml.
+          // Future unapproved native builds stay blocked without making installation fatal.
+          pnpm_config_strict_dep_builds: 'false'
         },
         shell: false,
         windowsHide: true,

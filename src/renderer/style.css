@@ -116,10 +116,13 @@ button:focus-visible, input:focus-visible { outline: 3px solid rgba(65,118,230,.
 .version-name { display: flex; align-items: center; gap: 6px; }
 .version-name strong { color: #202124; font: 650 12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; letter-spacing: -.02em; }
 .version-info p { margin-top: 5px; color: #919791; font-size: 9px; }
+.row-actions { display: flex; align-items: center; gap: 7px; }
 .row-action { min-width: 72px; min-height: 31px; padding: 0 11px; font-size: 10px; }
 .row-action svg { width: 13px; height: 13px; }
 .install { color: #315eaf; border-color: #c5d8ff; background: #edf3fe; }
 .install:hover:not(:disabled) { border-color: #8db3ff; background: #e4edfd; }
+.uninstall { color: #a23a3a; border-color: #ead0d0; background: #fffafa; }
+.uninstall:hover:not(:disabled) { color: #8c2424; border-color: #dfa9a9; background: #fff1f1; }
 .current-action { color: #315eaf; border-color: transparent; background: transparent; opacity: 1 !important; }
 .empty-state { display: grid; place-items: center; min-height: 220px; color: #8a928b; text-align: center; }
 .empty-state > span { margin-bottom: -22px; font-family: Georgia, serif; font-size: 30px; color: #a8b2aa; }
