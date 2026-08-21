@@ -15,7 +15,7 @@ export class AppController extends EventEmitter {
   private availableVersions: OfficialVersion[] = []
   private nodeVersion: string | null = null
   private error: string | null = null
-  private installing = false
+  private versionOperationInProgress = false
 
   constructor(
     private readonly appVersion: string,
@@ -57,9 +57,9 @@ export class AppController extends EventEmitter {
   }
 
   async install(version: string): Promise<AppSnapshot> {
-    if (this.installing) throw new Error('已有 DSH 版本正在安装')
+    if (this.versionOperationInProgress) throw new Error('已有 DSH 版本操作正在进行')
     exactVersionSchema.parse(version)
-    this.installing = true
+    this.versionOperationInProgress = true
     try {
       if (this.availableVersions.length === 0) {
         const catalog = await this.registry.catalog()
@@ -76,7 +76,25 @@ export class AppController extends EventEmitter {
       this.error = error instanceof Error ? error.message : '安装失败'
       throw error
     } finally {
-      this.installing = false
+      this.versionOperationInProgress = false
+      await this.emitSnapshot()
+    }
+    return await this.snapshot()
+  }
+
+  async uninstall(version: string): Promise<AppSnapshot> {
+    if (this.versionOperationInProgress) throw new Error('已有 DSH 版本操作正在进行')
+    exactVersionSchema.parse(version)
+    if (this.state.selectedVersion === version) throw new Error('无法卸载当前使用的 DSH 版本，请先切换到其他版本')
+    this.versionOperationInProgress = true
+    try {
+      await this.versions.uninstall(version)
+      this.error = null
+    } catch (error) {
+      this.error = error instanceof Error ? error.message : '卸载失败'
+      throw error
+    } finally {
+      this.versionOperationInProgress = false
       await this.emitSnapshot()
     }
     return await this.snapshot()

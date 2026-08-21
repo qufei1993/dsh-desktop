@@ -2,6 +2,7 @@ export const channels = {
   snapshot: 'dsh:snapshot',
   refresh: 'dsh:refresh',
   install: 'dsh:install',
+  uninstall: 'dsh:uninstall',
   select: 'dsh:select',
   launch: 'dsh:launch',
   stop: 'dsh:stop',

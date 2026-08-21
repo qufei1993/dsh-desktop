@@ -36,6 +36,8 @@ describe('AppController', () => {
     expect((await controller.dismissUpdate('1.1.0')).dismissedLatest).toBe('1.1.0')
     expect((await controller.install('1.1.0')).selectedVersion).toBe('1.0.0')
     expect((await controller.select('1.1.0')).selectedVersion).toBe('1.1.0')
+    await expect(controller.uninstall('1.1.0')).rejects.toThrow('无法卸载当前使用')
+    expect((await controller.uninstall('1.0.0')).installedVersions.map((item) => item.version)).toEqual(['1.1.0'])
     expect((await controller.setLocale('en-US'))).toMatchObject({ locale: 'en-US', localePreference: 'en-US' })
   })
 })

@@ -109,6 +109,10 @@ function App(): React.JSX.Element {
     await perform(quickUpdateKey, quickUpdateBusyLabel, action)
   }
 
+  const uninstallVersion = async (version: string): Promise<void> => {
+    await perform(`uninstall:${version}`, language.uninstallingVersion(version), () => window.dshDesktop.uninstall(version))
+  }
+
   return <main className="app-shell">
     <header className="topbar">
       <div className="brand-mark" aria-hidden="true"><img src={deepSeekWhale} alt="" /></div>
@@ -228,7 +232,10 @@ function App(): React.JSX.Element {
               {current
                 ? <button className="button row-action current-action" disabled><CheckIcon />{language.inUse}</button>
                 : item.installed
-                  ? <button className="button row-action secondary" disabled={busyAction !== null} onClick={() => void perform(actionKey, language.switchingTo(item.version), () => window.dshDesktop.select(item.version))}>{busyAction === actionKey ? language.switching : language.switch}</button>
+                  ? <div className="row-actions">
+                      <button className="button row-action secondary" disabled={busyAction !== null} onClick={() => void perform(actionKey, language.switchingTo(item.version), () => window.dshDesktop.select(item.version))}>{busyAction === actionKey ? language.switching : language.switch}</button>
+                      {item.source === 'installed' && <button className="button row-action uninstall" disabled={busyAction !== null} onClick={() => void uninstallVersion(item.version)}><TrashIcon />{busyAction === `uninstall:${item.version}` ? language.uninstalling : language.uninstall}</button>}
+                    </div>
                   : <button className="button row-action install" disabled={busyAction !== null} onClick={() => void perform(actionKey, language.installingVersion(item.version), () => window.dshDesktop.install(item.version))}><DownloadIcon />{busyAction === actionKey ? language.installing : language.install}</button>}
             </article>
           })}
@@ -293,7 +300,8 @@ function localizeMessage(locale: AppLocale, message: string): string {
     '此平台需要从 GitHub Releases 手动下载更新': 'Download the update manually from GitHub Releases on this platform', '此平台需要从 GitHub Releases 手动安装更新': 'Install the update manually from GitHub Releases on this platform',
     '尚未发布可供自动更新的正式版本': 'No published release is currently available for automatic updates',
     '内置 Node.js 运行环境不可用': 'The bundled Node.js runtime is unavailable', '检查版本失败': 'Could not check versions',
-    '已有 DSH 版本正在安装': 'Another DSH version is already being installed', '安装失败': 'Installation failed',
+    '已有 DSH 版本正在安装': 'Another DSH version is already being installed', '已有 DSH 版本操作正在进行': 'Another DSH version operation is in progress', '安装失败': 'Installation failed', '卸载失败': 'Uninstallation failed',
+    '该版本不是用户安装的 DSH 版本': 'This DSH version was not installed by the user', '无法卸载当前使用的 DSH 版本，请先切换到其他版本': 'Switch to another DSH version before uninstalling the current version',
     '请先停止正在运行的 DSH': 'Stop the running DSH instance first', '请先安装并选择一个 DSH 版本': 'Install and select a DSH version first',
     '启动失败': 'Could not start DSH', '无法查询官方 DSH 版本': 'Could not query official DSH versions',
     'npm registry 未返回有效版本': 'The npm registry did not return any valid versions',
@@ -327,8 +335,8 @@ function copy(locale: AppLocale) {
     versionFilters: 'Version filters', versions: 'Versions', allVersions: 'All versions', installed: 'Installed', available: 'Available', installedVersions: 'Installed versions', availableVersions: 'Available versions',
     versionSource: 'Version source', officialNpm: 'Official npm registry', officialNpmShort: 'Official npm', onlyOfficialLine1: 'Installs and runs only', onlyOfficialLine2: 'official DSH packages',
     searchVersion: 'Search versions', showPrerelease: 'Show prereleases', refreshVersions: 'Refresh official versions', syncingVersions: 'Syncing official npm versions…',
-    versionCount: (count: number) => `${count} version${count === 1 ? '' : 's'}`, latest: 'Latest', inUse: 'In use', switching: 'Switching…', switch: 'Switch', installing: 'Installing…', install: 'Install',
-    switchingTo: (version: string) => `Switching to ${version}…`, installingVersion: (version: string) => `Installing ${version}…`,
+    versionCount: (count: number) => `${count} version${count === 1 ? '' : 's'}`, latest: 'Latest', inUse: 'In use', switching: 'Switching…', switch: 'Switch', installing: 'Installing…', install: 'Install', uninstalling: 'Uninstalling…', uninstall: 'Uninstall',
+    switchingTo: (version: string) => `Switching to ${version}…`, installingVersion: (version: string) => `Installing ${version}…`, uninstallingVersion: (version: string) => `Uninstalling ${version}…`,
     noMatchingVersions: 'No matching versions', refreshEmpty: 'Refresh to load versions from the official npm registry.', adjustFilters: 'Try adjusting the filters or search.', unknown: 'Unknown', unknownPublishDate: 'Publish date unknown',
     notRunning: 'Not running', starting: 'Starting', dshRunning: 'DSH running', stopping: 'Stopping', runtimeError: 'Runtime error',
     newDesktopVersion: (version: string) => `Version ${version} is available. You decide whether to upgrade.`, newDesktopVersionManual: (version: string) => `Version ${version} is available. Open GitHub Releases to download it.`, newVersion: 'new version', downloadingDesktop: (version: string, percent: number) => `Downloading ${version} · ${percent}%`,
@@ -344,8 +352,8 @@ function copy(locale: AppLocale) {
     versionFilters: '版本筛选', versions: '版本', allVersions: '全部版本', installed: '已安装', available: '可安装', installedVersions: '已安装版本', availableVersions: '可安装版本',
     versionSource: '版本来源', officialNpm: 'npm 官方源', officialNpmShort: '官方 npm', onlyOfficialLine1: '仅安装并运行', onlyOfficialLine2: '官方 DSH 包',
     searchVersion: '搜索版本号', showPrerelease: '显示预发布版本', refreshVersions: '刷新官方版本', syncingVersions: '正在同步 npm 官方版本…',
-    versionCount: (count: number) => `${count} 个版本`, latest: '最新', inUse: '使用中', switching: '切换中…', switch: '切换', installing: '安装中…', install: '安装',
-    switchingTo: (version: string) => `正在切换到 ${version}…`, installingVersion: (version: string) => `正在安装 ${version}…`,
+    versionCount: (count: number) => `${count} 个版本`, latest: '最新', inUse: '使用中', switching: '切换中…', switch: '切换', installing: '安装中…', install: '安装', uninstalling: '卸载中…', uninstall: '卸载',
+    switchingTo: (version: string) => `正在切换到 ${version}…`, installingVersion: (version: string) => `正在安装 ${version}…`, uninstallingVersion: (version: string) => `正在卸载 ${version}…`,
     noMatchingVersions: '没有符合条件的版本', refreshEmpty: '点击右上角刷新，从 npm 官方源获取版本。', adjustFilters: '试试调整筛选或搜索内容。', unknown: '未知', unknownPublishDate: '发布时间未知',
     notRunning: '未运行', starting: '启动中', dshRunning: 'DSH 运行中', stopping: '停止中', runtimeError: '运行异常',
     newDesktopVersion: (version: string) => `发现新版 ${version}，是否升级由你决定`, newDesktopVersionManual: (version: string) => `发现新版 ${version}，请前往 GitHub Releases 下载`, newVersion: '新版', downloadingDesktop: (version: string, percent: number) => `正在下载 ${version} · ${percent}%`,
@@ -358,6 +366,7 @@ const Svg = ({ children }: { children: React.ReactNode }): React.JSX.Element => 
 const GridIcon = (): React.JSX.Element => <Svg><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/></Svg>
 const CheckIcon = (): React.JSX.Element => <Svg><path d="m5 12 4 4L19 6"/></Svg>
 const DownloadIcon = (): React.JSX.Element => <Svg><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 20h14"/></Svg>
+const TrashIcon = (): React.JSX.Element => <Svg><path d="M4 7h16M9 7V4h6v3m3 0-1 13H7L6 7m4 4v5m4-5v5"/></Svg>
 const SearchIcon = (): React.JSX.Element => <Svg><circle cx="11" cy="11" r="6"/><path d="m16 16 4 4"/></Svg>
 const RefreshIcon = (): React.JSX.Element => <Svg><path d="M20 7v5h-5M4 17v-5h5"/><path d="M18.1 9A7 7 0 0 0 6 6.5L4 12m16 0-2 5.5A7 7 0 0 1 5.9 15"/></Svg>
 const RestartIcon = (): React.JSX.Element => <Svg><path d="M20 6v5h-5"/><path d="M18.2 9A7.5 7.5 0 1 0 19 15"/></Svg>

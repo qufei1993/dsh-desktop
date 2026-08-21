@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, readdir, rm, stat, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -24,6 +24,10 @@ describe('VersionManager', () => {
     expect(resolved.version).toBe('1.2.3-rc.1')
     expect(resolved.entry).toContain(path.join('@deepseek-ai', 'dsh', 'cli.js'))
     expect(progress).toContain('正在获取依赖：已解析 12，已复用 8，已下载 3，已安装 1')
+    const buildPolicy = await readFile(path.join(resolved.root, 'pnpm-workspace.yaml'), 'utf8')
+    expect(buildPolicy).toContain("'@deepseek-ai/dsh-subprocess-local': true")
+    expect(buildPolicy).toContain('koffi: false')
+    expect(buildPolicy).toContain('node-pty: false')
     await expect(manager.install('../escape', ['../escape'], () => undefined)).rejects.toThrow()
   })
 
@@ -41,6 +45,20 @@ describe('VersionManager', () => {
     await manager.cleanupInterruptedInstalls()
     await expect(manager.list()).resolves.toEqual([])
     await expect(stat(staging)).rejects.toThrow()
+  })
+
+  it('仅卸载用户安装的完整版本目录', async () => {
+    directory = await mkdtemp(path.join(os.tmpdir(), 'dsh-version-'))
+    const manager = new VersionManager(directory, path.join(directory, 'bundled'), {
+      node: process.execPath,
+      npmCli: path.join(root, 'tests/fixtures/fake-npm.mjs'),
+      pnpmCli: path.join(root, 'tests/fixtures/fake-pnpm.mjs'),
+      commandDir: path.join(root, 'node_modules/.bin')
+    })
+    await manager.install('1.2.3', ['1.2.3'], () => undefined)
+    await manager.uninstall('1.2.3')
+    await expect(manager.list()).resolves.toEqual([])
+    await expect(manager.uninstall('1.2.3')).rejects.toThrow('不是用户安装')
   })
 
   it('安装长时间无输出时终止子进程并清理临时目录', async () => {
