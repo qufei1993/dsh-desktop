@@ -310,9 +310,11 @@ function localizeMessage(locale: AppLocale, message: string): string {
   return message
     .replace(/^正在安装官方 DSH (.+)$/, 'Installing official DSH $1')
     .replace(/^DSH (.+) 已安装$/, 'DSH $1 installed')
+    .replace(/^正在获取依赖：已解析 (\d+)，已复用 (\d+)，已下载 (\d+)，已安装 (\d+)$/, 'Fetching dependencies: $1 resolved, $2 reused, $3 downloaded, $4 installed')
     .replace(/^检查更新失败：/, 'Update check failed: ')
     .replace(/^官方 DSH 启动失败（退出码 (.+)）$/, 'Official DSH failed to start (exit code $1)')
-    .replace(/^npm 安装失败（退出码 (.+)）：/, 'npm installation failed (exit code $1): ')
+    .replace(/^pnpm 安装失败（退出码 (.+)）：/, 'pnpm installation failed (exit code $1): ')
+    .replace(/^pnpm 安装超过 (.+) 分钟无进展$/, 'pnpm installation made no progress for $1 minutes')
 }
 
 function copy(locale: AppLocale) {

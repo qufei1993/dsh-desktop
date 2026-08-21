@@ -19,7 +19,7 @@ describe('AppController', () => {
     const runtime = {
       node: process.execPath,
       npmCli: path.join(root, 'tests/fixtures/fake-npm.mjs'),
-      pnpmCli: path.join(root, 'node_modules/pnpm/bin/pnpm.mjs'),
+      pnpmCli: path.join(root, 'tests/fixtures/fake-pnpm.mjs'),
       commandDir: path.dirname(process.execPath)
     }
     const versions = new VersionManager(directory, path.join(directory, 'bundled'), runtime)

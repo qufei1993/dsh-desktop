@@ -32,6 +32,7 @@ export class AppController extends EventEmitter {
 
   async initialize(): Promise<AppSnapshot> {
     this.state = await this.store.read()
+    await this.versions.cleanupInterruptedInstalls()
     try {
       const result = await runProcess(this.runtime.node, ['--version'], { timeoutMs: 5_000 })
       this.nodeVersion = result.stdout.trim()
