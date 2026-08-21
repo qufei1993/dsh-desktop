@@ -4,6 +4,9 @@ import os from 'node:os'
 import semver from 'semver'
 import type { RuntimeStatus } from '../shared/contracts'
 import type { ResolvedDsh } from './version-manager'
+import { prependRuntimePath } from './runtime-path-environment'
+
+export { prependRuntimePath } from './runtime-path-environment'
 
 const noOpenMinimumVersion = '0.1.0-rc.8'
 
@@ -22,25 +25,6 @@ export function parseLoopbackUrl(output: string): string | null {
     } catch { /* Continue scanning output. */ }
   }
   return null
-}
-
-export function prependRuntimePath(environment: NodeJS.ProcessEnv, entries: string[], platform = process.platform): NodeJS.ProcessEnv {
-  const result = { ...environment }
-  const pathKeys = Object.keys(result).filter((key) => key.toLowerCase() === 'path')
-  const pathKey = pathKeys[0] ?? 'PATH'
-  const separator = platform === 'win32' ? ';' : ':'
-  const normalize = (value: string): string => platform === 'win32' ? value.toLowerCase() : value
-  const seen = new Set<string>()
-  const values = [...entries, ...(result[pathKey]?.split(separator) ?? [])].filter((value) => {
-    if (!value) return false
-    const normalized = normalize(value)
-    if (seen.has(normalized)) return false
-    seen.add(normalized)
-    return true
-  })
-  for (const duplicate of pathKeys.slice(1)) delete result[duplicate]
-  result[pathKey] = values.join(separator)
-  return result
 }
 
 export function dshRuntimeEnvironment(environment: NodeJS.ProcessEnv, entries: string[], platform = process.platform): NodeJS.ProcessEnv {

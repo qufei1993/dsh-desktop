@@ -63,10 +63,17 @@ await writeFile(path.join(removablePackageRoot, 'package.json'), JSON.stringify(
   name: '@deepseek-ai/dsh', version: removableVersion, bin: { dsh: 'cli.js' }
 }))
 await writeFile(path.join(removablePackageRoot, 'cli.js'), 'throw new Error("E2E removable version must not launch")\n')
+const launchEnvironment: NodeJS.ProcessEnv = { ...process.env, DSH_HOME: path.join(isolatedHome, 'official-dsh') }
+if (process.platform === 'darwin') {
+  for (const key of Object.keys(launchEnvironment)) {
+    if (key.toLowerCase() === 'path') delete launchEnvironment[key]
+  }
+  launchEnvironment.PATH = '/usr/bin:/bin:/usr/sbin:/sbin'
+}
 const electronApp = await electron.launch({
   executablePath,
   args: [`--user-data-dir=${path.join(isolatedHome, 'electron')}`],
-  env: { ...process.env, DSH_HOME: path.join(isolatedHome, 'official-dsh'), ELECTRON_ENABLE_LOGGING: '1' }
+  env: { ...launchEnvironment, ELECTRON_ENABLE_LOGGING: '1' }
 })
 const applicationProcess = electronApp.process()
 let applicationOutput = ''
@@ -104,8 +111,16 @@ try {
   await manager.getByRole('heading', { name: /版本管理|Version Manager/ }).waitFor()
   await manager.getByRole('heading', { name: /^DSH\s+\d+\.\d+\.\d+/ }).waitFor()
   await manager.getByRole('button', { name: /全部版本|All versions/ }).waitFor()
-  await manager.getByText(removableVersion, { exact: true }).waitFor()
-  const uninstallButton = manager.getByRole('button', { name: /卸载|Uninstall/ })
+  const installVersion = process.env.DSH_DESKTOP_E2E_INSTALL_VERSION
+  if (installVersion) {
+    const targetRow = manager.locator('article.version-row').filter({ hasText: installVersion })
+    await targetRow.waitFor({ timeout: 30_000 })
+    await targetRow.getByRole('button', { name: /安装|Install/ }).click()
+    await targetRow.getByText(/已安装|Installed/, { exact: true }).waitFor({ timeout: 300_000 })
+  }
+  const removableRow = manager.locator('article.version-row').filter({ has: manager.getByText(removableVersion, { exact: true }) })
+  await removableRow.waitFor()
+  const uninstallButton = removableRow.getByRole('button', { name: /卸载|Uninstall/ })
   await uninstallButton.waitFor()
   await uninstallButton.click()
   await manager.getByText(removableVersion, { exact: true }).waitFor({ state: 'detached' })

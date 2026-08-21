@@ -7,7 +7,10 @@ import { VersionManager } from '../src/main/version-manager'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 let directory = ''
-afterEach(async () => { if (directory) await rm(directory, { recursive: true, force: true }) })
+afterEach(async () => {
+  delete process.env.FAKE_PNPM_FAIL
+  if (directory) await rm(directory, { recursive: true, force: true })
+})
 
 describe('VersionManager', () => {
   it('只安装目录中声明的精确官方版本并能解析入口', async () => {
@@ -72,5 +75,18 @@ describe('VersionManager', () => {
     await expect(manager.install('9.9.9', ['9.9.9'], () => undefined)).rejects.toThrow('无进展')
     const names = await readdir(path.join(directory, 'dsh-versions'))
     expect(names.some((name) => name.startsWith('.install-'))).toBe(false)
+  })
+
+  it('安装失败时优先显示根因并保留完整日志', async () => {
+    directory = await mkdtemp(path.join(os.tmpdir(), 'dsh-version-'))
+    process.env.FAKE_PNPM_FAIL = '1'
+    const manager = new VersionManager(directory, path.join(directory, 'bundled'), {
+      node: process.execPath,
+      npmCli: path.join(root, 'tests/fixtures/fake-npm.mjs'),
+      pnpmCli: path.join(root, 'tests/fixtures/fake-pnpm.mjs'),
+      commandDir: path.join(root, 'node_modules/.bin')
+    })
+    await expect(manager.install('1.2.3', ['1.2.3'], () => undefined)).rejects.toThrow('node: command not found')
+    await expect(readFile(manager.installFailureLog, 'utf8')).resolves.toContain('[ELIFECYCLE] Command failed.')
   })
 })
