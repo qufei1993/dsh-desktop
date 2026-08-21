@@ -6,6 +6,12 @@ This file records notable changes to DSH Desktop. Versions follow [Semantic Vers
 
 ## Unreleased
 
+## [0.2.3] - 2026-08-21
+
+### Fixed
+
+- Added the bundled Node.js directory to DSH version installation `PATH`, so dependency lifecycle scripts work when DSH Desktop is launched from Finder or Explorer without a developer shell environment. Failed installations now retain a detailed diagnostic log instead of showing only truncated progress output.
+
 ## [0.2.2] - 2026-08-21
 
 ### Added

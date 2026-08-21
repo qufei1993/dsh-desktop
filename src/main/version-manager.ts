@@ -5,6 +5,7 @@ import path from 'node:path'
 import { exactVersionSchema, officialPackageName, type InstallProgress, type InstalledVersion } from '../shared/contracts'
 import type { RuntimePaths } from './runtime-paths'
 import { npmProxyEnvironment } from './network-proxy'
+import { prependRuntimePath } from './runtime-path-environment'
 
 interface PackageManifest {
   name?: string
@@ -20,6 +21,15 @@ const pnpmBuildPolicy = `allowBuilds:
   protobufjs: false
 `
 
+function summarizePnpmFailure(output: string): string {
+  const lines = output
+    .replace(/\u001B\[[0-?]*[ -/]*[@-~]/g, '')
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line && !line.startsWith('Progress:') && !/^\++$/.test(line))
+  return lines.slice(-8).join(' | ').slice(-1_500)
+}
+
 export interface ResolvedDsh {
   version: string
   root: string
@@ -29,6 +39,7 @@ export interface ResolvedDsh {
 
 export class VersionManager {
   readonly versionsDir: string
+  readonly installFailureLog: string
 
   constructor(
     userData: string,
@@ -38,6 +49,7 @@ export class VersionManager {
     private readonly installStallTimeoutMs = 5 * 60_000
   ) {
     this.versionsDir = path.join(userData, 'dsh-versions')
+    this.installFailureLog = path.join(userData, 'dsh-install-failure.log')
   }
 
   async cleanupInterruptedInstalls(): Promise<void> {
@@ -126,7 +138,7 @@ export class VersionManager {
         '--reporter=append-only'
       ], {
         env: {
-          ...npmProxyEnvironment(this.proxyUrl),
+          ...prependRuntimePath(npmProxyEnvironment(this.proxyUrl), [path.dirname(this.runtime.node), this.runtime.commandDir]),
           CI: '1',
           pnpm_config_minimum_release_age: '0',
           // Only the official helper permission fix is allowlisted in pnpm-workspace.yaml.
@@ -142,6 +154,7 @@ export class VersionManager {
       let lineBuffer = ''
       let lastProgress = ''
       let stallTimer: NodeJS.Timeout
+      let terminationError: Error | null = null
       const finish = (error?: Error): void => {
         if (settled) return
         settled = true
@@ -150,15 +163,16 @@ export class VersionManager {
         else resolve()
       }
       const resetStallTimer = (): void => {
+        if (terminationError) return
         clearTimeout(stallTimer)
         stallTimer = setTimeout(() => {
+          terminationError = new Error(`pnpm 安装超过 ${Math.round(this.installStallTimeoutMs / 60_000)} 分钟无进展`)
           child.kill()
-          finish(new Error(`pnpm 安装超过 ${Math.round(this.installStallTimeoutMs / 60_000)} 分钟无进展`))
         }, this.installStallTimeoutMs)
       }
       const consume = (chunk: string): void => {
         resetStallTimer()
-        output = `${output}${chunk}`.slice(-8_192)
+        output = `${output}${chunk}`.slice(-512 * 1_024)
         lineBuffer += chunk
         const lines = lineBuffer.split(/\r?\n/)
         lineBuffer = lines.pop() ?? ''
@@ -178,9 +192,20 @@ export class VersionManager {
       child.stdout.setEncoding('utf8').on('data', consume)
       child.stderr.setEncoding('utf8').on('data', consume)
       child.once('error', (error) => finish(error))
-      child.once('exit', (code) => code === 0
-        ? finish()
-        : finish(new Error(`pnpm 安装失败（退出码 ${code ?? 'unknown'}）：${output.slice(-500)}`)))
+      child.once('exit', (code) => {
+        if (terminationError) {
+          finish(terminationError)
+          return
+        }
+        if (code === 0) {
+          finish()
+          return
+        }
+        const detail = summarizePnpmFailure(output)
+        const error = new Error(`pnpm 安装失败（退出码 ${code ?? 'unknown'}）：${detail || '未返回错误详情'}`)
+        const log = [`DSH ${version}`, new Date().toISOString(), '', output].join('\n')
+        void writeFile(this.installFailureLog, log).then(() => finish(error), () => finish(error))
+      })
       resetStallTimer()
     })
   }
