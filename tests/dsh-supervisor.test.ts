@@ -1,11 +1,18 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { chmod, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
+import os from 'node:os'
 import { afterEach, describe, expect, it } from 'vitest'
-import { DshSupervisor, dshRuntimeEnvironment, dshWebArguments, parseLoopbackUrl, prependRuntimePath } from '../src/main/dsh-supervisor'
+import { DshSupervisor, dshCommandDirectory, dshRuntimeEnvironment, dshWebArguments, parseLoopbackUrl, prependRuntimePath } from '../src/main/dsh-supervisor'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 let supervisor: DshSupervisor | null = null
-afterEach(async () => { await supervisor?.stop() })
+let directory = ''
+afterEach(async () => {
+  await supervisor?.stop()
+  delete process.env.DSH_DESKTOP_TEST_REQUIRE_DSH_CLI
+  if (directory) await rm(directory, { recursive: true, force: true })
+})
 
 describe('parseLoopbackUrl', () => {
   it('只接受带端口的 127.0.0.1 HTTP 地址', () => {
@@ -38,6 +45,11 @@ describe('DshSupervisor', () => {
     })
   })
 
+  it('把当前 DSH 版本的命令目录放到 PATH 最前面', () => {
+    const dsh = { version: '1.0.0', root: '/managed/1.0.0', entry: '/managed/1.0.0/dsh.js', source: 'installed' as const }
+    expect(dshCommandDirectory(dsh)).toBe(path.join('/managed/1.0.0', 'node_modules', '.bin'))
+  })
+
   it('启动假 CLI、进入运行状态并正常停止', async () => {
     supervisor = new DshSupervisor(process.execPath)
     const url = await supervisor.start({ version: '1.0.0', root, entry: path.join(root, 'tests/fixtures/fake-dsh.mjs'), source: 'installed' }, 5_000)
@@ -45,5 +57,24 @@ describe('DshSupervisor', () => {
     expect(supervisor.status).toBe('running')
     await supervisor.stop()
     expect(supervisor.status).toBe('idle')
+  })
+
+  it('让 DSH 内部的插件管理器能按名称调用当前版本 CLI', async () => {
+    directory = await mkdtemp(path.join(os.tmpdir(), 'dsh-supervisor-'))
+    const commandDirectory = path.join(directory, 'node_modules', '.bin')
+    await mkdir(commandDirectory, { recursive: true })
+    if (process.platform === 'win32') {
+      await writeFile(path.join(commandDirectory, 'dsh.cmd'), '@echo 1.0.0\r\n')
+    } else {
+      const command = path.join(commandDirectory, 'dsh')
+      await writeFile(command, '#!/bin/sh\necho 1.0.0\n')
+      await chmod(command, 0o755)
+    }
+    process.env.DSH_DESKTOP_TEST_REQUIRE_DSH_CLI = '1'
+    supervisor = new DshSupervisor(process.execPath)
+    const url = await supervisor.start({
+      version: '1.0.0', root: directory, entry: path.join(root, 'tests/fixtures/fake-dsh.mjs'), source: 'installed'
+    }, 5_000)
+    expect(url).toMatch(/^http:\/\/127\.0\.0\.1:\d+$/)
   })
 })

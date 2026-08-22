@@ -1,6 +1,7 @@
 import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process'
 import { EventEmitter } from 'node:events'
 import os from 'node:os'
+import path from 'node:path'
 import semver from 'semver'
 import type { RuntimeStatus } from '../shared/contracts'
 import type { ResolvedDsh } from './version-manager'
@@ -37,6 +38,10 @@ export function dshRuntimeEnvironment(environment: NodeJS.ProcessEnv, entries: s
   }
 }
 
+export function dshCommandDirectory(dsh: ResolvedDsh): string {
+  return path.join(dsh.root, 'node_modules', '.bin')
+}
+
 export class DshSupervisor extends EventEmitter {
   status: RuntimeStatus = 'idle'
   url: string | null = null
@@ -53,7 +58,9 @@ export class DshSupervisor extends EventEmitter {
     return await new Promise<string>((resolve, reject) => {
       const child = spawn(this.nodePath, dshWebArguments(dsh), {
         cwd: os.homedir(),
-        env: dshRuntimeEnvironment(process.env, this.runtimePathEntries),
+        // Official plugin management invokes `dsh` by name. Keep the selected
+        // version first so it never falls back to another globally installed CLI.
+        env: dshRuntimeEnvironment(process.env, [dshCommandDirectory(dsh), ...this.runtimePathEntries]),
         shell: false,
         windowsHide: true,
         stdio: ['pipe', 'pipe', 'pipe']
