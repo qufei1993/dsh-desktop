@@ -115,10 +115,14 @@ async function main(): Promise<void> {
   await mkdir(runtimeBin, { recursive: true })
   if (platform === 'win32') {
     await writeFile(path.join(runtimeBin, 'pnpm.cmd'), '@echo off\r\n"%~dp0..\\runtime\\node.exe" "%~dp0..\\package-manager\\pnpm\\bin\\pnpm.mjs" %*\r\n')
+    await writeFile(path.join(runtimeBin, 'dsh.cmd'), '@echo off\r\nif not defined DSH_DESKTOP_NODE exit /b 1\r\nif not defined DSH_DESKTOP_DSH_ENTRY exit /b 1\r\n"%DSH_DESKTOP_NODE%" "%DSH_DESKTOP_DSH_ENTRY%" %*\r\n')
   } else {
     const pnpmShim = path.join(runtimeBin, 'pnpm')
     await writeFile(pnpmShim, '#!/bin/sh\nset -eu\nresource_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)\nexec "$resource_root/runtime/bin/node" "$resource_root/package-manager/pnpm/bin/pnpm.mjs" "$@"\n')
     await chmod(pnpmShim, 0o755)
+    const dshShim = path.join(runtimeBin, 'dsh')
+    await writeFile(dshShim, '#!/bin/sh\nset -eu\n: "${DSH_DESKTOP_NODE:?}"\n: "${DSH_DESKTOP_DSH_ENTRY:?}"\nexec "$DSH_DESKTOP_NODE" "$DSH_DESKTOP_DSH_ENTRY" "$@"\n')
+    await chmod(dshShim, 0o755)
   }
 
   const dshRoot = path.join(resourceRoot, 'dsh', dshVersion)

@@ -37,12 +37,19 @@ const packagedNpm = process.platform === 'win32'
 const packagedPnpm = path.join(resourcesPath, 'package-manager', 'pnpm', 'bin', 'pnpm.mjs')
 const packagedRuntimeBin = path.join(resourcesPath, 'runtime-bin')
 const packagedPnpmCommand = path.join(packagedRuntimeBin, process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm')
-if (!existsSync(packagedNode) || !existsSync(packagedNpm) || !existsSync(packagedPnpm) || !existsSync(packagedPnpmCommand)) {
-  throw new Error(`打包应用的运行资源不完整：node=${existsSync(packagedNode)}, npm=${existsSync(packagedNpm)}, pnpm=${existsSync(packagedPnpm)}, pnpmCommand=${existsSync(packagedPnpmCommand)}`)
+const packagedDshCommand = path.join(packagedRuntimeBin, process.platform === 'win32' ? 'dsh.cmd' : 'dsh')
+const packagedDshEntry = path.join(resourcesPath, 'dsh', '0.1.0-rc.6', 'node_modules', '@deepseek-ai', 'dsh', 'lib', 'bin.js')
+if (!existsSync(packagedNode) || !existsSync(packagedNpm) || !existsSync(packagedPnpm) || !existsSync(packagedPnpmCommand) || !existsSync(packagedDshCommand) || !existsSync(packagedDshEntry)) {
+  throw new Error(`打包应用的运行资源不完整：node=${existsSync(packagedNode)}, npm=${existsSync(packagedNpm)}, pnpm=${existsSync(packagedPnpm)}, pnpmCommand=${existsSync(packagedPnpmCommand)}, dshCommand=${existsSync(packagedDshCommand)}, dshEntry=${existsSync(packagedDshEntry)}`)
 }
 
 const pathKey = Object.keys(process.env).find((key) => key.toLowerCase() === 'path') ?? 'PATH'
-const packagedEnvironment = { ...process.env, [pathKey]: [packagedRuntimeBin, path.dirname(packagedNode), process.env[pathKey]].filter(Boolean).join(path.delimiter) }
+const packagedEnvironment = {
+  ...process.env,
+  [pathKey]: [packagedRuntimeBin, path.dirname(packagedNode), process.env[pathKey]].filter(Boolean).join(path.delimiter),
+  DSH_DESKTOP_NODE: packagedNode,
+  DSH_DESKTOP_DSH_ENTRY: packagedDshEntry
+}
 const packagedPnpmVersion = await new Promise<string>((resolve, reject) => {
   const executable = process.platform === 'win32' ? 'cmd.exe' : 'pnpm'
   const args = process.platform === 'win32' ? ['/d', '/s', '/c', 'pnpm --version'] : ['--version']
@@ -55,6 +62,18 @@ const packagedPnpmVersion = await new Promise<string>((resolve, reject) => {
   command.once('exit', (code) => code === 0 ? resolve(stdout.trim()) : reject(new Error(`打包 pnpm 退出码 ${code}: ${stderr}`)))
 })
 if (packagedPnpmVersion !== '11.22.0') throw new Error(`打包 pnpm 版本不正确：${packagedPnpmVersion}`)
+const packagedDshVersion = await new Promise<string>((resolve, reject) => {
+  const executable = process.platform === 'win32' ? 'cmd.exe' : 'dsh'
+  const args = process.platform === 'win32' ? ['/d', '/s', '/c', 'dsh --version'] : ['--version']
+  const command = spawn(executable, args, { env: packagedEnvironment, shell: false, windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] })
+  let stdout = ''
+  let stderr = ''
+  command.stdout.on('data', (chunk: Buffer) => { stdout += chunk.toString() })
+  command.stderr.on('data', (chunk: Buffer) => { stderr += chunk.toString() })
+  command.once('error', reject)
+  command.once('exit', (code) => code === 0 ? resolve(stdout.trim()) : reject(new Error(`打包 dsh 退出码 ${code}: ${stderr}`)))
+})
+if (packagedDshVersion !== '0.1.0-rc.6') throw new Error(`打包 dsh 版本不正确：${packagedDshVersion}`)
 const isolatedHome = await mkdtemp(path.join(os.tmpdir(), 'dsh-desktop-e2e-'))
 const removableVersion = '0.0.1'
 const removablePackageRoot = path.join(isolatedHome, 'electron', 'dsh-versions', removableVersion, 'node_modules', '@deepseek-ai', 'dsh')
@@ -147,7 +166,7 @@ try {
   }
   await dshWindow.close()
   await manager.getByText(/未运行|Not running/, { exact: true }).waitFor({ timeout: 10_000 })
-  console.log('Packaged E2E passed: bundled pnpm, direct official DSH launch, version removal, manager UI, and stop-on-close')
+  console.log('Packaged E2E passed: selected dsh CLI, bundled pnpm, direct official DSH launch, version removal, manager UI, and stop-on-close')
 } finally {
   await electronApp.close()
   await rm(isolatedHome, { recursive: true, force: true })

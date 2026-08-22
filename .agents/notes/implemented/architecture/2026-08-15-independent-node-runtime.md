@@ -13,6 +13,8 @@ DSH Desktop must run the official `@deepseek-ai/dsh` package consistently on sup
 
 DSH Desktop bundles a pinned official Node.js 24 LTS runtime for each supported operating-system and CPU target. The Electron main process launches official DSH as a child process using the absolute bundled Node.js path and the package's resolved CLI entry. It does not execute DSH inside Electron's Node.js runtime and does not depend on a system Node.js installation.
 
+The child environment is rebuilt for the selected DSH version on every launch. Its `PATH` prioritizes Desktop's bundled command directory and Node.js directory before any inherited entries. A Desktop-owned `dsh` launcher delegates to the selected package's already validated CLI entry with the bundled Node.js executable; it deliberately does not use package-manager-generated `.bin` shims because an atomic directory rename can leave absolute staging paths inside those shims. Official plugin workflows that invoke `dsh`, `pnpm`, or `node` by name therefore use the selected official CLI and Desktop's bundled tools rather than a missing, relocated, or unrelated global installation. Desktop does not create global shims or modify the user's persistent `PATH`.
+
 ## Alternatives considered
 
 **Electron's embedded Node.js.** This would couple official DSH and native dependencies to Electron's Node.js, V8, ABI, and upgrade schedule, which differs from the official execution environment.
@@ -23,8 +25,8 @@ DSH Desktop bundles a pinned official Node.js 24 LTS runtime for each supported 
 
 ## Consequences
 
-Installers are larger and require target-specific runtime preparation. In exchange, DSH startup is reproducible, independent of shell configuration, and close to the official Node.js execution model. Runtime and Electron upgrades remain separate compatibility decisions.
+Installers are larger and require target-specific runtime preparation. The supervisor must also derive command resolution from the selected version whenever a version is switched. In exchange, DSH startup and official child workflows are reproducible, independent of shell configuration, and close to the official Node.js execution model. Runtime and Electron upgrades remain separate compatibility decisions.
 
 ## Verification
 
-`npm run prepare:runtime` downloads and validates the pinned runtime. `npm run test:official` starts the bundled official DSH with that runtime. Packaged E2E verifies the runtime and package manager inside the final application resources.
+`npm run prepare:runtime` downloads and validates the pinned runtime and creates target-platform `dsh` and `pnpm` launchers. Supervisor regression tests verify that `dsh` is resolvable from inside the child process and delegates to the exact selected entry. `npm run test:official` resolves the selected `dsh` CLI and bundled `pnpm`, then starts the bundled official DSH with the pinned runtime. Packaged E2E repeats CLI resolution through the launchers inside the final application resources.
