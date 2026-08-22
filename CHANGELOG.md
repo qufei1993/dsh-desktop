@@ -6,6 +6,12 @@ This file records notable changes to DSH Desktop. Versions follow [Semantic Vers
 
 ## Unreleased
 
+## [0.2.4] - 2026-08-22
+
+### Fixed
+
+- Made plugin commands resolve the currently selected official DSH CLI through a Desktop-owned launcher backed by the bundled Node.js runtime. This avoids reliance on a global `dsh` installation and on package-manager shims that retain deleted staging paths after exact-version installation, migration, or reinstallation.
+
 ## [0.2.3] - 2026-08-21
 
 ### Fixed
