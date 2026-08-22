@@ -44,6 +44,12 @@ npm run dev
 
 Recommended commit types are `feat`, `fix`, `docs`, `test`, `refactor`, `build`, and `chore`.
 
+## AI-assisted engineering
+
+Repository-local AI workflows and durable decision records live under `.agents/`. Contributors using an AI agent should follow the matching repository Skill for code review, pre-push verification, releases, bilingual documentation, and decision-note maintenance. Significant product, architecture, security, process, or testing decisions should add or update a Decision Note; routine task plans and change summaries should not.
+
+See [AI Engineering Infrastructure](docs/AI_ENGINEERING.md) for the information model, available workflows, decision lifecycle, archive criteria, and validation rules.
+
 ## Verify the change
 
 Run at least:
