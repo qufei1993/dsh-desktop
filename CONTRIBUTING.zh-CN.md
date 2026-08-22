@@ -44,6 +44,12 @@ npm run dev
 
 推荐的提交类型包括 `feat`、`fix`、`docs`、`test`、`refactor`、`build` 和 `chore`。
 
+## AI 辅助工程
+
+仓库级 AI 工作流和持久决策记录位于 `.agents/`。使用 AI Agent 的贡献者应当在代码审阅、推送前验证、发布、双语文档和决策记录维护任务中遵循对应的仓库 Skill。重要的产品、架构、安全、流程或测试决策应当新增或更新 Decision Note；日常任务计划和变更摘要不应写入其中。
+
+信息模型、可用工作流、决策生命周期、归档条件和验证规则见 [AI 工程基础设施](docs/AI_ENGINEERING.zh-CN.md)。
+
 ## 验证要求
 
 所有改动至少运行：
