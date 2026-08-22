@@ -1,7 +1,6 @@
 import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process'
 import { EventEmitter } from 'node:events'
 import os from 'node:os'
-import path from 'node:path'
 import semver from 'semver'
 import type { RuntimeStatus } from '../shared/contracts'
 import type { ResolvedDsh } from './version-manager'
@@ -38,8 +37,18 @@ export function dshRuntimeEnvironment(environment: NodeJS.ProcessEnv, entries: s
   }
 }
 
-export function dshCommandDirectory(dsh: ResolvedDsh): string {
-  return path.join(dsh.root, 'node_modules', '.bin')
+export function dshChildEnvironment(
+  environment: NodeJS.ProcessEnv,
+  dsh: ResolvedDsh,
+  nodePath: string,
+  runtimePathEntries: string[],
+  platform = process.platform
+): NodeJS.ProcessEnv {
+  return {
+    ...dshRuntimeEnvironment(environment, runtimePathEntries, platform),
+    DSH_DESKTOP_NODE: nodePath,
+    DSH_DESKTOP_DSH_ENTRY: dsh.entry
+  }
 }
 
 export class DshSupervisor extends EventEmitter {
@@ -58,9 +67,10 @@ export class DshSupervisor extends EventEmitter {
     return await new Promise<string>((resolve, reject) => {
       const child = spawn(this.nodePath, dshWebArguments(dsh), {
         cwd: os.homedir(),
-        // Official plugin management invokes `dsh` by name. Keep the selected
-        // version first so it never falls back to another globally installed CLI.
-        env: dshRuntimeEnvironment(process.env, [dshCommandDirectory(dsh), ...this.runtimePathEntries]),
+        // Official plugin management invokes `dsh` by name. The Desktop-owned
+        // launcher delegates to this exact validated entry without using pnpm's
+        // relocatable-installation shims, which retain obsolete staging paths.
+        env: dshChildEnvironment(process.env, dsh, this.nodePath, this.runtimePathEntries),
         shell: false,
         windowsHide: true,
         stdio: ['pipe', 'pipe', 'pipe']

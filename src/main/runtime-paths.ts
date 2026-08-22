@@ -27,11 +27,12 @@ export function resolveRuntimePaths(resourcesPath: string, isPackaged: boolean):
   const pnpmCli = path.join(resourcesPath, 'package-manager', 'pnpm', 'bin', 'pnpm.mjs')
   const commandDir = path.join(resourcesPath, 'runtime-bin')
   const pnpmCommand = path.join(commandDir, process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm')
+  const dshCommand = path.join(commandDir, process.platform === 'win32' ? 'dsh.cmd' : 'dsh')
 
-  if (existsSync(node) && existsSync(npmCli) && existsSync(pnpmCli) && existsSync(pnpmCommand)) {
+  if (existsSync(node) && existsSync(npmCli) && existsSync(pnpmCli) && existsSync(pnpmCommand) && existsSync(dshCommand)) {
     return { node, npmCli, pnpmCli, commandDir }
   }
-  if (isPackaged) throw new Error('应用内置 Node.js 或 pnpm 运行环境缺失，请重新安装 DSH Desktop')
+  if (isPackaged) throw new Error('应用内置 Node.js、pnpm 或 DSH 启动器缺失，请重新安装 DSH Desktop')
 
   const localNode = process.env.npm_node_execpath ?? process.execPath
   const localNpm = process.env.npm_execpath

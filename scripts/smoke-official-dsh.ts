@@ -12,11 +12,15 @@ const runtime = path.join(root, 'build-resources', 'runtime')
 const node = platform === 'win32' ? path.join(runtime, 'node.exe') : path.join(runtime, 'bin', 'node')
 const runtimeBin = path.join(root, 'build-resources', 'runtime-bin')
 const packageRoot = path.join(root, 'build-resources', 'dsh', '0.1.0-rc.6', 'node_modules', '@deepseek-ai', 'dsh')
-const dshBin = path.join(path.resolve(packageRoot, '..', '..', '..'), 'node_modules', '.bin')
 const manifest = JSON.parse(await readFile(path.join(packageRoot, 'package.json'), 'utf8')) as { bin: string | Record<string, string> }
 const bin = typeof manifest.bin === 'string' ? manifest.bin : manifest.bin.dsh
+const entry = path.resolve(packageRoot, bin)
 const temporaryHome = await mkdtemp(path.join(os.tmpdir(), 'dsh-desktop-smoke-'))
-const runtimeEnvironment = prependRuntimePath(process.env, [dshBin, runtimeBin, path.dirname(node)])
+const runtimeEnvironment = {
+  ...prependRuntimePath(process.env, [runtimeBin, path.dirname(node)]),
+  DSH_DESKTOP_NODE: node,
+  DSH_DESKTOP_DSH_ENTRY: entry
+}
 
 async function verifyBundledPnpm(): Promise<void> {
   const executable = platform === 'win32' ? 'cmd.exe' : 'pnpm'
@@ -50,7 +54,7 @@ async function verifySelectedDshCli(): Promise<void> {
 
 await verifyBundledPnpm()
 await verifySelectedDshCli()
-const child = spawn(node, [path.resolve(packageRoot, bin), 'web', '--port', '0'], {
+const child = spawn(node, [entry, 'web', '--port', '0'], {
   env: { ...runtimeEnvironment, DSH_HOME: temporaryHome }, shell: false, windowsHide: true, stdio: ['ignore', 'pipe', 'pipe']
 })
 
