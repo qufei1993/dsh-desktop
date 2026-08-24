@@ -60,14 +60,14 @@
     "@types/semver": "^7.7.1",
     "@types/write-file-atomic": "4.0.3",
     "@vitejs/plugin-react": "5.2.0",
-    "electron": "43.4.0",
+    "electron": "43.4.1",
     "electron-builder": "26.15.3",
     "electron-vite": "5.0.0",
     "playwright-core": "1.62.1",
     "tsx": "4.23.12",
     "typescript": "7.0.2",
     "vite": "7.3.6",
-    "vitest": "4.1.10"
+    "vitest": "4.1.11"
   },
   "build": {
     "appId": "dev.dsh.desktop",
