@@ -13,7 +13,12 @@ interface PackageManifest {
   bin?: string | Record<string, string>
 }
 
-const pnpmBuildPolicy = `allowBuilds:
+const pnpmBuildPolicy = `# pnpm's default isolated layout links packages through Windows junctions with
+# absolute targets, so the staging-to-destination rename performed after
+# validation breaks every link (ENOENT on node_modules/@deepseek-ai/dsh).
+# The hoisted layout writes real files and survives the rename on all platforms.
+nodeLinker: hoisted
+allowBuilds:
   '@deepseek-ai/dsh-subprocess-local': true
   '@google/genai': false
   koffi: false
@@ -93,8 +98,15 @@ export class VersionManager {
     await mkdir(this.versionsDir, { recursive: true })
     const destination = path.join(this.versionsDir, version)
     if (existsSync(destination)) {
-      await this.resolveAt(destination, version, 'installed')
-      return
+      try {
+        await this.resolveAt(destination, version, 'installed')
+        return
+      } catch {
+        // A directory that fails validation is not a usable installation (for
+        // example a pre-hoisted layout whose junctions the rename broke).
+        // Replacing it cannot damage a complete version, so reinstall.
+        await rm(destination, { recursive: true, force: true })
+      }
     }
     const staging = path.join(this.versionsDir, `.install-${version}-${Date.now()}`)
     await mkdir(staging, { recursive: true })

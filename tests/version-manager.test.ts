@@ -28,6 +28,7 @@ describe('VersionManager', () => {
     expect(resolved.entry).toContain(path.join('@deepseek-ai', 'dsh', 'cli.js'))
     expect(progress).toContain('正在获取依赖：已解析 12，已复用 8，已下载 3，已安装 1')
     const buildPolicy = await readFile(path.join(resolved.root, 'pnpm-workspace.yaml'), 'utf8')
+    expect(buildPolicy).toContain('nodeLinker: hoisted')
     expect(buildPolicy).toContain("'@deepseek-ai/dsh-subprocess-local': true")
     expect(buildPolicy).toContain('koffi: false')
     expect(buildPolicy).toContain('node-pty: false')
@@ -62,6 +63,23 @@ describe('VersionManager', () => {
     await manager.uninstall('1.2.3')
     await expect(manager.list()).resolves.toEqual([])
     await expect(manager.uninstall('1.2.3')).rejects.toThrow('不是用户安装')
+  })
+
+  it('目标目录已损坏时重新安装而不是报错', async () => {
+    directory = await mkdtemp(path.join(os.tmpdir(), 'dsh-version-'))
+    const manager = new VersionManager(directory, path.join(directory, 'bundled'), {
+      node: process.execPath,
+      npmCli: path.join(root, 'tests/fixtures/fake-npm.mjs'),
+      pnpmCli: path.join(root, 'tests/fixtures/fake-pnpm.mjs'),
+      commandDir: path.join(root, 'node_modules/.bin')
+    })
+    // Simulate a broken installation: the directory exists but its package
+    // manifest is unreadable, exactly like junctions broken by a rename.
+    const broken = path.join(directory, 'dsh-versions', '1.2.3')
+    await mkdir(path.join(broken, 'node_modules', '@deepseek-ai', 'dsh'), { recursive: true })
+    await manager.install('1.2.3', ['1.2.3'], () => undefined)
+    const resolved = await manager.resolve('1.2.3')
+    expect(resolved.entry).toContain(path.join('@deepseek-ai', 'dsh', 'cli.js'))
   })
 
   it('安装长时间无输出时终止子进程并清理临时目录', async () => {
