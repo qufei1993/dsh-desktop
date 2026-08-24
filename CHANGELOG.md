@@ -6,6 +6,8 @@ This file records notable changes to DSH Desktop. Versions follow [Semantic Vers
 
 ## Unreleased
 
+## [0.2.6] - 2026-08-24
+
 ### Fixed
 
 - Installed official DSH versions now survive the staging-to-destination rename on Windows. pnpm's default isolated layout links packages through Windows junctions with absolute targets, so the post-validation rename broke every link and the version failed to resolve with `ENOENT ... node_modules/@deepseek-ai/dsh/package.json`. The install now uses the hoisted layout, and reinstalling over a broken version directory repairs it instead of failing.
