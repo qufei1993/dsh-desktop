@@ -54,9 +54,9 @@
     "zod": "4.4.3"
   },
   "devDependencies": {
-    "@types/node": "^26.2.0",
+    "@types/node": "^26.4.0",
     "@types/react": "^19.0.0",
-    "@types/react-dom": "^19.0.0",
+    "@types/react-dom": "^19.2.5",
     "@types/semver": "^7.7.1",
     "@types/write-file-atomic": "4.0.3",
     "@vitejs/plugin-react": "5.2.0",
@@ -67,7 +67,7 @@
     "tsx": "4.23.12",
     "typescript": "7.0.2",
     "vite": "7.3.6",
-    "vitest": "4.1.10"
+    "vitest": "4.1.11"
   },
   "build": {
     "appId": "dev.dsh.desktop",
